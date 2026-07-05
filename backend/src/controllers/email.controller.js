@@ -32,4 +32,16 @@ async function sendBulkEmail(req, res, next) {
   }
 }
 
-module.exports = { sendEmail, sendBulkEmail };
+async function sendPersonalizedEmail(req, res, next) {
+  const { recipients, subject, text, html } = req.body;
+  const attachments = buildAttachments(req.files);
+
+  try {
+    const summary = await mailerService.sendPersonalizedBulkMail({ recipients, subject, text, html, attachments });
+    res.status(200).json(summary);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { sendEmail, sendBulkEmail, sendPersonalizedEmail };

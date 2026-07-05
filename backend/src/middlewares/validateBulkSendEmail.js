@@ -1,6 +1,5 @@
 const isValidEmail = require('../utils/isValidEmail');
-
-const MAX_RECIPIENTS = 50;
+const { MAX_RECIPIENTS } = require('../config/limits');
 
 function validateBulkSendEmail(req, res, next) {
   const { recipients, subject, text, html } = req.body || {};

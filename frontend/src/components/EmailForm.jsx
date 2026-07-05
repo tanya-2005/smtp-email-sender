@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react';
-import { sendEmail, sendBulkEmail } from '../api/emailApi';
+import { sendEmail, sendBulkEmail, sendPersonalizedEmail } from '../api/emailApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { partitionFiles } from '../utils/fileValidation';
 import Notification from './Notification';
 import RecipientListInput from './RecipientListInput';
 import BulkSummary from './BulkSummary';
+import CsvUpload from './CsvUpload';
+import CsvPreviewTable from './CsvPreviewTable';
+import PlaceholderHints from './PlaceholderHints';
 
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 
@@ -12,6 +15,8 @@ function EmailForm() {
   const [mode, setMode] = useState('single');
   const [form, setForm] = useState(INITIAL_FORM);
   const [recipients, setRecipients] = useState(['']);
+  const [csvHeaders, setCsvHeaders] = useState([]);
+  const [csvRows, setCsvRows] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -39,6 +44,22 @@ function EmailForm() {
 
   function removeRecipient(index) {
     setRecipients((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleCsvParsed({ headers, rows }) {
+    setCsvHeaders(headers);
+    setCsvRows(rows);
+    setNotification(null);
+  }
+
+  function handleCsvError(message) {
+    setCsvHeaders([]);
+    setCsvRows([]);
+    setNotification({ type: 'error', message });
+  }
+
+  function removeCsvRow(id) {
+    setCsvRows((prev) => prev.filter((row) => row._id !== id));
   }
 
   function resetAttachments() {
@@ -87,6 +108,24 @@ function EmailForm() {
           setRecipients(['']);
           resetAttachments();
         }
+      } else if (mode === 'csv') {
+        const result = await sendPersonalizedEmail({
+          recipients: csvRows,
+          subject: form.subject,
+          message: form.message,
+          attachments,
+        });
+        setSummary(result);
+        setNotification({
+          type: result.failed > 0 ? 'error' : 'success',
+          message: `Sent ${result.successful} of ${result.total} emails successfully.`,
+        });
+        if (result.failed === 0) {
+          setForm(INITIAL_FORM);
+          setCsvHeaders([]);
+          setCsvRows([]);
+          resetAttachments();
+        }
       } else {
         await sendEmail({ ...form, attachments });
         setNotification({ type: 'success', message: 'Email sent successfully!' });
@@ -100,8 +139,18 @@ function EmailForm() {
     }
   }
 
+  const submitLabel = isSending
+    ? 'Sending...'
+    : mode === 'bulk'
+      ? 'Send Bulk Email'
+      : mode === 'csv'
+        ? 'Send Personalized Emails'
+        : 'Send Email';
+
+  const csvSendDisabled = mode === 'csv' && csvRows.length === 0;
+
   return (
-    <div className="email-card">
+    <div className={`email-card${mode === 'csv' ? ' email-card--wide' : ''}`}>
       <h1 className="email-card__title">Send an Email</h1>
 
       <div className="mode-toggle" role="tablist">
@@ -123,6 +172,15 @@ function EmailForm() {
         >
           Bulk Email
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'csv'}
+          className={mode === 'csv' ? 'active' : ''}
+          onClick={() => handleModeChange('csv')}
+        >
+          CSV Import
+        </button>
       </div>
 
       <Notification
@@ -134,7 +192,7 @@ function EmailForm() {
       <BulkSummary summary={summary} />
 
       <form onSubmit={handleSubmit} className="email-form">
-        {mode === 'single' ? (
+        {mode === 'single' && (
           <div className="form-field">
             <label htmlFor="to">Recipient Email</label>
             <input
@@ -147,7 +205,9 @@ function EmailForm() {
               required
             />
           </div>
-        ) : (
+        )}
+
+        {mode === 'bulk' && (
           <div className="form-field">
             <label>Recipient Emails</label>
             <RecipientListInput
@@ -156,6 +216,14 @@ function EmailForm() {
               onAdd={addRecipient}
               onRemove={removeRecipient}
             />
+          </div>
+        )}
+
+        {mode === 'csv' && (
+          <div className="form-field">
+            <label htmlFor="csv-upload">Upload Recipients CSV</label>
+            <CsvUpload onParsed={handleCsvParsed} onError={handleCsvError} />
+            <CsvPreviewTable headers={csvHeaders} rows={csvRows} onRemove={removeCsvRow} />
           </div>
         )}
 
@@ -183,6 +251,7 @@ function EmailForm() {
             onChange={handleChange}
             required
           />
+          {mode === 'csv' && <PlaceholderHints headers={csvHeaders} />}
         </div>
 
         <div className="form-field">
@@ -208,8 +277,8 @@ function EmailForm() {
           )}
         </div>
 
-        <button type="submit" className="submit-button" disabled={isSending}>
-          {isSending ? 'Sending...' : mode === 'bulk' ? 'Send Bulk Email' : 'Send Email'}
+        <button type="submit" className="submit-button" disabled={isSending || csvSendDisabled}>
+          {submitLabel}
         </button>
       </form>
     </div>
