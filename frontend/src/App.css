@@ -22,6 +22,143 @@
   text-align: center;
 }
 
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.mode-toggle button {
+  flex: 1;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.mode-toggle button.active {
+  color: #fff;
+  background: var(--accent);
+}
+
+.recipient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipient-row {
+  display: flex;
+  gap: 8px;
+}
+
+.recipient-row input {
+  flex: 1;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.recipient-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.recipient-remove {
+  flex-shrink: 0;
+  width: 38px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.recipient-add {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.recipient-add:hover {
+  color: var(--accent-hover);
+}
+
+.bulk-summary {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.bulk-summary__stats {
+  display: flex;
+  gap: 12px;
+  text-align: center;
+}
+
+.bulk-summary__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bulk-summary__stat strong {
+  font-size: 22px;
+  color: var(--text-h);
+}
+
+.bulk-summary__stat span {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.bulk-summary__stat--success strong {
+  color: var(--success);
+}
+
+.bulk-summary__stat--failed strong {
+  color: var(--error);
+}
+
+.bulk-summary__failed-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--error);
+  text-align: left;
+}
+
 .email-form {
   display: flex;
   flex-direction: column;
