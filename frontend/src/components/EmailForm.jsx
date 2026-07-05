@@ -1,18 +1,37 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { sendEmail } from '../api/emailApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
+import { partitionFiles } from '../utils/fileValidation';
 import Notification from './Notification';
 
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 
 function EmailForm() {
   const [form, setForm] = useState(INITIAL_FORM);
+  const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [notification, setNotification] = useState(null);
+  const fileInputRef = useRef(null);
 
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleFileChange(event) {
+    const { accepted, rejected } = partitionFiles(Array.from(event.target.files));
+    setAttachments(accepted);
+
+    if (rejected.length > 0) {
+      setNotification({
+        type: 'error',
+        message: `Some files were not added: ${rejected.join(', ')}`,
+      });
+
+      const dataTransfer = new DataTransfer();
+      accepted.forEach((file) => dataTransfer.items.add(file));
+      event.target.files = dataTransfer.files;
+    }
   }
 
   async function handleSubmit(event) {
@@ -21,9 +40,11 @@ function EmailForm() {
     setNotification(null);
 
     try {
-      await sendEmail(form);
+      await sendEmail({ ...form, attachments });
       setNotification({ type: 'success', message: 'Email sent successfully!' });
       setForm(INITIAL_FORM);
+      setAttachments([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
       setNotification({ type: 'error', message: extractErrorMessage(error) });
     } finally {
@@ -79,6 +100,29 @@ function EmailForm() {
             onChange={handleChange}
             required
           />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="attachments">Attachments</label>
+          <input
+            id="attachments"
+            name="attachments"
+            type="file"
+            className="file-input"
+            multiple
+            accept=".pdf,.docx,image/*"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+          />
+          <span className="file-hint">PDF, DOCX, or images. Max 10 MB per file.</span>
+
+          {attachments.length > 0 && (
+            <ul className="file-list">
+              {attachments.map((file) => (
+                <li key={file.name + file.size}>{file.name}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <button type="submit" className="submit-button" disabled={isSending}>

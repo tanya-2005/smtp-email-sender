@@ -23,7 +23,7 @@ async function verifyConnection() {
   await getTransporter().verify();
 }
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, attachments }) {
   try {
     const info = await getTransporter().sendMail({
       from: env.smtp.from,
@@ -31,6 +31,7 @@ async function sendMail({ to, subject, text, html }) {
       subject,
       text,
       html,
+      attachments,
     });
     return info;
   } catch (err) {
