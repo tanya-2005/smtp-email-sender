@@ -39,4 +39,26 @@ async function sendMail({ to, subject, text, html, attachments }) {
   }
 }
 
-module.exports = { sendMail, verifyConnection };
+async function sendBulkMail({ recipients, subject, text, html, attachments }) {
+  const results = [];
+
+  for (const recipient of recipients) {
+    try {
+      const info = await sendMail({ to: recipient, subject, text, html, attachments });
+      results.push({ email: recipient, status: 'success', messageId: info.messageId });
+    } catch (err) {
+      results.push({ email: recipient, status: 'failed', error: err.message });
+    }
+  }
+
+  const successful = results.filter((r) => r.status === 'success').length;
+
+  return {
+    total: results.length,
+    successful,
+    failed: results.length - successful,
+    results,
+  };
+}
+
+module.exports = { sendMail, sendBulkMail, verifyConnection };

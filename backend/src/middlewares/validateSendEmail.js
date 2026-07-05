@@ -1,8 +1,4 @@
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function isValidEmail(email) {
-  return typeof email === 'string' && EMAIL_REGEX.test(email);
-}
+const isValidEmail = require('../utils/isValidEmail');
 
 function validateSendEmail(req, res, next) {
   const { to, subject, text, html } = req.body || {};
