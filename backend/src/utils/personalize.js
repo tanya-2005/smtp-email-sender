@@ -5,7 +5,7 @@ function personalize(template, data) {
 
   return template.replace(PLACEHOLDER_REGEX, (match, key) => {
     const value = data[key.toLowerCase()];
-    return value !== undefined && value !== null ? String(value) : match;
+    return value !== undefined && value !== null ? String(value) : '';
   });
 }
 
