@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  HelpCircle,
   Loader2,
   Server,
   Settings as SettingsIcon,
@@ -17,11 +18,52 @@ import Skeleton from './ui/Skeleton';
 
 const PROVIDERS = [
   { value: 'gmail', label: 'Gmail' },
-  { value: 'outlook', label: 'Outlook / Microsoft 365' },
+  { value: 'outlook', label: 'Outlook' },
   { value: 'yahoo', label: 'Yahoo' },
   { value: 'zoho', label: 'Zoho' },
   { value: 'custom', label: 'Custom SMTP' },
 ];
+
+const PASSWORD_HINTS = {
+  gmail: 'Use your Google App Password',
+  outlook: 'Use your Outlook Password (or App Password if required)',
+  yahoo: 'Use your Yahoo App Password',
+  zoho: 'Use your Zoho Password',
+  custom: 'Use the password for your SMTP account',
+};
+
+const APP_PASSWORD_HELP = {
+  gmail: {
+    steps: [
+      'Turn on 2-Step Verification on your Google Account.',
+      'Go to Google Account → Security → App Passwords.',
+      'Generate a new App Password and paste it here.',
+    ],
+    link: 'https://myaccount.google.com/apppasswords',
+  },
+  outlook: {
+    steps: [
+      'Try your regular Outlook / Microsoft 365 password first.',
+      'If it is rejected, your organization may require an App Password - generate one from Microsoft Account → Security → Advanced security options.',
+    ],
+  },
+  yahoo: {
+    steps: [
+      'Turn on 2-Step Verification on your Yahoo Account.',
+      'Go to Account Security → Generate app password.',
+      'Paste the generated password here.',
+    ],
+  },
+  zoho: {
+    steps: [
+      'Try your regular Zoho Mail password first.',
+      'If your account has two-factor authentication enabled, generate an Application-Specific Password from Zoho Account → Security instead.',
+    ],
+  },
+  custom: {
+    steps: ['Use the credentials provided by your SMTP server administrator.'],
+  },
+};
 
 const INITIAL_FORM = {
   provider: 'gmail',
@@ -31,6 +73,7 @@ const INITIAL_FORM = {
   host: '',
   port: '',
   secure: false,
+  username: '',
 };
 
 function SettingsPage({ onSaved }) {
@@ -39,9 +82,10 @@ function SettingsPage({ onSaved }) {
   const [hasPassword, setHasPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
+  const [connectionResult, setConnectionResult] = useState(null);
 
   useEffect(() => {
     getSettings()
@@ -54,10 +98,11 @@ function SettingsPage({ onSaved }) {
           host: data.host || '',
           port: data.port || '',
           secure: Boolean(data.secure),
+          username: data.username || '',
         });
         setHasPassword(data.hasPassword);
       })
-      .catch(() => showToast({ type: 'error', message: 'Could not load SMTP settings.' }))
+      .catch(() => showToast({ type: 'error', message: 'Could not load Sender Account settings.' }))
       .finally(() => setIsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -65,27 +110,34 @@ function SettingsPage({ onSaved }) {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setTestResult(null);
+    setConnectionResult(null);
+  }
+
+  function handleProviderChange(event) {
+    setForm((prev) => ({ ...prev, provider: event.target.value }));
+    setConnectionResult(null);
+    setShowHelp(false);
   }
 
   function handleSecureToggle(event) {
     setForm((prev) => ({ ...prev, secure: event.target.checked }));
-    setTestResult(null);
+    setConnectionResult(null);
   }
 
   const isCustom = form.provider === 'custom';
   const canSubmit =
     isValidEmail(form.senderEmail.trim()) &&
     (!isCustom || (form.host.trim() && form.port));
+  const help = APP_PASSWORD_HELP[form.provider];
 
   async function handleTest() {
     setIsTesting(true);
-    setTestResult(null);
+    setConnectionResult(null);
     try {
       const result = await testSettingsConnection(form);
-      setTestResult(result);
+      setConnectionResult(result);
     } catch (error) {
-      setTestResult({ success: false, message: extractErrorMessage(error) });
+      setConnectionResult({ success: false, message: extractErrorMessage(error) });
     } finally {
       setIsTesting(false);
     }
@@ -98,7 +150,11 @@ function SettingsPage({ onSaved }) {
       const saved = await saveSettings(form);
       setHasPassword(saved.hasPassword);
       setForm((prev) => ({ ...prev, password: '' }));
-      showToast({ type: 'success', message: 'SMTP settings saved.' });
+      setConnectionResult(saved.connection);
+      showToast({
+        type: saved.connection.success ? 'success' : 'error',
+        message: saved.connection.success ? 'Sender account saved and connected.' : 'Saved, but connection failed.',
+      });
       onSaved?.();
     } catch (error) {
       showToast({ type: 'error', message: extractErrorMessage(error) });
@@ -110,7 +166,7 @@ function SettingsPage({ onSaved }) {
   if (isLoading) {
     return (
       <div className="panel">
-        <Section icon={SettingsIcon} title="SMTP Settings">
+        <Section icon={SettingsIcon} title="Sender Account">
           <Skeleton rows={4} />
         </Section>
       </div>
@@ -120,11 +176,11 @@ function SettingsPage({ onSaved }) {
   return (
     <div className="panel">
       <form onSubmit={handleSave}>
-        <Section icon={SettingsIcon} title="SMTP Settings">
+        <Section icon={SettingsIcon} title="Sender Account">
           <div className="settings-grid">
             <div className="form-field">
-              <label htmlFor="provider">Provider</label>
-              <select id="provider" name="provider" value={form.provider} onChange={handleChange}>
+              <label htmlFor="provider">Email Provider</label>
+              <select id="provider" name="provider" value={form.provider} onChange={handleProviderChange}>
                 {PROVIDERS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -146,7 +202,7 @@ function SettingsPage({ onSaved }) {
             </div>
 
             <div className="form-field">
-              <label htmlFor="senderEmail">Sender Email</label>
+              <label htmlFor="senderEmail">Email Address</label>
               <input
                 id="senderEmail"
                 name="senderEmail"
@@ -179,12 +235,24 @@ function SettingsPage({ onSaved }) {
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
+              <span className="form-field__hint">{PASSWORD_HINTS[form.provider]}</span>
             </div>
 
             {isCustom && (
               <>
                 <div className="form-field">
-                  <label htmlFor="host">Host</label>
+                  <label htmlFor="username">Username</label>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Defaults to Email Address if left blank"
+                    value={form.username}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="host">SMTP Host</label>
                   <input
                     id="host"
                     name="host"
@@ -195,7 +263,7 @@ function SettingsPage({ onSaved }) {
                   />
                 </div>
                 <div className="form-field">
-                  <label htmlFor="port">Port</label>
+                  <label htmlFor="port">SMTP Port</label>
                   <input
                     id="port"
                     name="port"
@@ -208,17 +276,37 @@ function SettingsPage({ onSaved }) {
                 <div className="form-field form-field--checkbox">
                   <label htmlFor="secure">
                     <input id="secure" name="secure" type="checkbox" checked={form.secure} onChange={handleSecureToggle} />
-                    Use secure connection (SSL/TLS)
+                    Secure (SSL/TLS)
                   </label>
                 </div>
               </>
             )}
           </div>
 
-          {testResult && (
-            <div className={`settings-test-result${testResult.success ? ' settings-test-result--success' : ' settings-test-result--error'}`}>
-              {testResult.success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-              {testResult.message}
+          <button type="button" className="help-toggle" onClick={() => setShowHelp((prev) => !prev)}>
+            <HelpCircle size={13} />
+            Need an App Password? Click here.
+          </button>
+
+          {showHelp && help && (
+            <div className="help-box">
+              <ol>
+                {help.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              {help.link && (
+                <a href={help.link} target="_blank" rel="noreferrer">
+                  Open Google App Passwords →
+                </a>
+              )}
+            </div>
+          )}
+
+          {connectionResult && (
+            <div className={`settings-test-result${connectionResult.success ? ' settings-test-result--success' : ' settings-test-result--error'}`}>
+              {connectionResult.success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+              {connectionResult.success ? `✓ ${connectionResult.message}` : connectionResult.message}
             </div>
           )}
         </Section>
@@ -235,7 +323,7 @@ function SettingsPage({ onSaved }) {
           </button>
           <button type="submit" className="btn btn--primary" disabled={!canSubmit || isSaving}>
             {isSaving ? <Loader2 size={15} className="spinner" /> : <CheckCircle2 size={15} />}
-            {isSaving ? 'Saving...' : 'Save Settings'}
+            {isSaving ? 'Connecting...' : 'Save & Connect'}
           </button>
         </div>
       </form>
