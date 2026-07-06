@@ -266,7 +266,7 @@ export function useEmailComposer() {
         : estimatedEmails > 0);
 
   function getValidationMessage() {
-    if (!smtpConfigured) return 'Configure SMTP Settings before sending.';
+    if (!smtpConfigured) return 'Set up your Sender Account before sending.';
     if (mode === 'single' && !isValidEmail(form.to.trim())) return 'Enter a valid recipient email.';
     if (mode === 'bulk' && !bulkRecipientsValid) return 'Add at least one valid recipient.';
     if (mode === 'csv' && csvRows.length === 0) return 'Upload a CSV file with recipients.';

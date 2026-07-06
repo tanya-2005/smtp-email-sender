@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { value: 'single', label: 'Single Email', icon: Mail },
   { value: 'bulk', label: 'Bulk Email', icon: List },
   { value: 'csv', label: 'CSV Personalization', icon: FileSpreadsheet },
-  { value: 'settings', label: 'SMTP Settings', icon: Settings },
+  { value: 'settings', label: 'Sender Account', icon: Settings },
 ];
 
 function Sidebar({ activeNav, onNavChange, senderEmail, senderStatus }) {

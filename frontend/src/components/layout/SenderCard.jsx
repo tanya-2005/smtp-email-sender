@@ -12,7 +12,7 @@ function SenderCard({ email, status }) {
           </span>
           <span className="sender-card__status sender-card__status--ok">
             <CheckCircle2 size={13} />
-            SMTP Connected
+            Connected
           </span>
         </>
       )}
