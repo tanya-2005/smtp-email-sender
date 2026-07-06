@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   host: '',
   port: '',
   secure: false,
+  username: '',
 };
 
 function ensureDataDir() {
@@ -47,6 +48,13 @@ function toPublicSettings(settings) {
   return { ...rest, hasPassword: Boolean(password), configured: isConfigured(settings) };
 }
 
+function resolveAuthUser(settings) {
+  if (settings.provider === 'custom' && settings.username && settings.username.trim()) {
+    return settings.username.trim();
+  }
+  return settings.senderEmail;
+}
+
 function resolveSmtpConfig(settings) {
   const preset = SMTP_PROVIDERS[settings.provider];
   if (!preset) throw new Error('Unknown SMTP provider');
@@ -60,7 +68,7 @@ function resolveSmtpConfig(settings) {
     host,
     port,
     secure,
-    auth: { user: settings.senderEmail, pass: settings.password },
+    auth: { user: resolveAuthUser(settings), pass: settings.password },
     from: settings.senderName ? `"${settings.senderName}" <${settings.senderEmail}>` : settings.senderEmail,
   };
 }
@@ -77,6 +85,7 @@ function saveSettings(input) {
     host: input.provider === 'custom' ? input.host || '' : '',
     port: input.provider === 'custom' ? input.port || '' : '',
     secure: input.provider === 'custom' ? Boolean(input.secure) : false,
+    username: input.provider === 'custom' ? input.username || '' : '',
   };
 
   writeSettings(next);
@@ -89,4 +98,5 @@ module.exports = {
   isConfigured,
   toPublicSettings,
   resolveSmtpConfig,
+  resolveAuthUser,
 };
