@@ -1,3 +1,3 @@
 module.exports = {
-  MAX_RECIPIENTS: 50,
+  MAX_RECIPIENTS: 150,
 };

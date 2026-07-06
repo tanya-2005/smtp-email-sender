@@ -9,7 +9,7 @@ import { useToast } from '../components/ui/ToastProvider';
 
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 const MAX_ATTACHMENTS = 10;
-const MAX_RECIPIENTS = 50;
+const MAX_RECIPIENTS = 150;
 
 export function useEmailComposer() {
   const showToast = useToast();
