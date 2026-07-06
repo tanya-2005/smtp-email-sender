@@ -1,34 +1,36 @@
 const nodemailer = require('nodemailer');
-const env = require('../config/env');
 const AppError = require('../utils/AppError');
 const isValidEmail = require('../utils/isValidEmail');
 const personalize = require('../utils/personalize');
+const settingsService = require('./settings.service');
 
-let transporter;
+function assertConfigured() {
+  const settings = settingsService.readSettings();
+  if (!settingsService.isConfigured(settings)) {
+    throw new AppError('SMTP is not configured. Please set up SMTP Settings first.', 503);
+  }
+  return settings;
+}
 
 function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.smtp.host,
-      port: env.smtp.port,
-      secure: env.smtp.secure,
-      auth: {
-        user: env.smtp.user,
-        pass: env.smtp.pass,
-      },
-    });
-  }
-  return transporter;
+  const settings = assertConfigured();
+  const { from, ...transportOptions } = settingsService.resolveSmtpConfig(settings);
+  const transporter = nodemailer.createTransport(transportOptions);
+
+  return { transporter, from };
 }
 
 async function verifyConnection() {
-  await getTransporter().verify();
+  const { transporter } = getTransporter();
+  await transporter.verify();
 }
 
 async function sendMail({ to, subject, text, html, attachments }) {
+  const { transporter, from } = getTransporter();
+
   try {
-    const info = await getTransporter().sendMail({
-      from: env.smtp.from,
+    const info = await transporter.sendMail({
+      from,
       to,
       subject,
       text,
@@ -42,6 +44,7 @@ async function sendMail({ to, subject, text, html, attachments }) {
 }
 
 async function sendBulkMail({ recipients, subject, text, html, attachments }) {
+  assertConfigured();
   const results = [];
 
   for (const recipient of recipients) {
@@ -64,6 +67,7 @@ async function sendBulkMail({ recipients, subject, text, html, attachments }) {
 }
 
 async function sendPersonalizedBulkMail({ recipients, subject, text, html, attachments }) {
+  assertConfigured();
   const results = [];
 
   for (const recipient of recipients) {
