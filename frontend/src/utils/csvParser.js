@@ -8,8 +8,12 @@ export function parseCsvFile(file) {
       transformHeader: (header) => header.trim().toLowerCase(),
       transform: (value) => value.trim(),
       complete: (result) => {
-        if (result.errors.length > 0) {
-          reject(new Error(result.errors[0].message));
+        // FieldMismatch (ragged rows with missing/extra trailing columns) is non-fatal -
+        // Papa still parses the row, padding missing fields as empty. Only reject on
+        // genuinely fatal errors (e.g. malformed quotes/delimiters).
+        const fatalErrors = result.errors.filter((err) => err.type !== 'FieldMismatch');
+        if (fatalErrors.length > 0) {
+          reject(new Error(fatalErrors[0].message));
           return;
         }
 

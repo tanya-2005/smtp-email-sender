@@ -5,6 +5,7 @@ import LivePreview from './LivePreview';
 function SummaryPanel({ composer }) {
   const {
     mode,
+    senderEmail,
     recipientCount,
     attachments,
     csvHeaders,
@@ -12,6 +13,7 @@ function SummaryPanel({ composer }) {
     form,
     recipients,
     csvRows,
+    isFormValid,
   } = composer;
 
   const variableCount = mode === 'csv' ? csvHeaders.length : 0;
@@ -25,10 +27,12 @@ function SummaryPanel({ composer }) {
         </div>
         <CampaignSummary
           mode={mode}
+          senderEmail={senderEmail}
           recipientCount={recipientCount}
           attachmentCount={attachments.length}
           variableCount={variableCount}
           estimatedEmails={estimatedEmails}
+          isFormValid={isFormValid}
         />
       </div>
 

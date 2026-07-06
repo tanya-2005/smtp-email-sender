@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { sendEmail, sendBulkEmail, sendPersonalizedEmail } from '../api/emailApi';
+import { useEffect, useRef, useState } from 'react';
+import { getSender, sendEmail, sendBulkEmail, sendPersonalizedEmail } from '../api/emailApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { partitionFiles, MAX_FILE_SIZE_BYTES } from '../utils/fileValidation';
 import { parseCsvFile } from '../utils/csvParser';
@@ -9,6 +9,7 @@ import { useToast } from '../components/ui/ToastProvider';
 
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 const MAX_ATTACHMENTS = 10;
+const MAX_RECIPIENTS = 150;
 
 export function useEmailComposer() {
   const showToast = useToast();
@@ -21,11 +22,36 @@ export function useEmailComposer() {
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [summary, setSummary] = useState(null);
+  const [lastSuccess, setLastSuccess] = useState(null);
   const [activeField, setActiveField] = useState('message');
+  const [senderEmail, setSenderEmail] = useState(null);
+  const [senderStatus, setSenderStatus] = useState('loading');
 
   const subjectRef = useRef(null);
   const messageRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSender()
+      .then((data) => {
+        if (cancelled) return;
+        if (data.email) {
+          setSenderEmail(data.email);
+          setSenderStatus('connected');
+        } else {
+          setSenderStatus('error');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSenderStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -35,6 +61,11 @@ export function useEmailComposer() {
   function handleModeChange(nextMode) {
     setMode(nextMode);
     setSummary(null);
+    setLastSuccess(null);
+  }
+
+  function dismissSuccess() {
+    setLastSuccess(null);
   }
 
   function handleRecipientChange(index, value) {
@@ -142,6 +173,8 @@ export function useEmailComposer() {
     event.preventDefault();
     setIsSending(true);
     setSummary(null);
+    setLastSuccess(null);
+    const attachmentsCount = attachments.length;
 
     try {
       if (mode === 'bulk') {
@@ -152,15 +185,17 @@ export function useEmailComposer() {
           message: form.message,
           attachments,
         });
-        setSummary(result);
         showToast({
           type: result.failed > 0 ? 'error' : 'success',
           message: `Sent ${result.successful} of ${result.total} emails successfully.`,
         });
         if (result.failed === 0) {
+          setLastSuccess({ mode, sentCount: result.successful, attachmentsCount, timestamp: new Date() });
           setForm(INITIAL_FORM);
           setRecipients(['']);
           resetAttachments();
+        } else {
+          setSummary(result);
         }
       } else if (mode === 'csv') {
         const result = await sendPersonalizedEmail({
@@ -169,20 +204,23 @@ export function useEmailComposer() {
           message: form.message,
           attachments,
         });
-        setSummary(result);
         showToast({
           type: result.failed > 0 ? 'error' : 'success',
           message: `Sent ${result.successful} of ${result.total} emails successfully.`,
         });
         if (result.failed === 0) {
+          setLastSuccess({ mode, sentCount: result.successful, attachmentsCount, timestamp: new Date() });
           setForm(INITIAL_FORM);
           setCsvHeaders([]);
           setCsvRows([]);
           resetAttachments();
+        } else {
+          setSummary(result);
         }
       } else {
         await sendEmail({ ...form, attachments });
         showToast({ type: 'success', message: 'Email sent successfully!' });
+        setLastSuccess({ mode, sentCount: 1, attachmentsCount, timestamp: new Date() });
         setForm(INITIAL_FORM);
         resetAttachments();
       }
@@ -211,6 +249,22 @@ export function useEmailComposer() {
         ? recipients.map((email) => email.trim()).filter(isValidEmail).length
         : csvRows.filter((row) => isValidEmail(row.email)).length;
 
+  const hasContent = Boolean(form.subject.trim()) && Boolean(form.message.trim());
+  const csvOverLimit = mode === 'csv' && csvRows.length > MAX_RECIPIENTS;
+
+  const filledBulkRecipients = recipients.map((email) => email.trim()).filter(Boolean);
+  const bulkRecipientsValid =
+    filledBulkRecipients.length > 0 && filledBulkRecipients.every(isValidEmail);
+
+  const isFormValid =
+    hasContent &&
+    !csvOverLimit &&
+    (mode === 'single'
+      ? isValidEmail(form.to.trim())
+      : mode === 'bulk'
+        ? bulkRecipientsValid
+        : estimatedEmails > 0);
+
   return {
     mode,
     handleModeChange,
@@ -232,7 +286,11 @@ export function useEmailComposer() {
     fileInputRef,
     isSending,
     summary,
+    lastSuccess,
+    dismissSuccess,
     handleSubmit,
+    senderEmail,
+    senderStatus,
     activeField,
     setActiveField,
     subjectRef,
@@ -243,5 +301,8 @@ export function useEmailComposer() {
     recipientCount,
     estimatedEmails,
     maxAttachmentSizeBytes: MAX_FILE_SIZE_BYTES,
+    isFormValid,
+    csvOverLimit,
+    maxRecipients: MAX_RECIPIENTS,
   };
 }

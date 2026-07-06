@@ -1,15 +1,26 @@
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+
 const MODE_LABELS = {
   single: 'Single Email',
   bulk: 'Bulk Email',
   csv: 'CSV Personalization',
 };
 
-function CampaignSummary({ mode, recipientCount, attachmentCount, variableCount, estimatedEmails }) {
+function CampaignSummary({
+  mode,
+  senderEmail,
+  recipientCount,
+  attachmentCount,
+  variableCount,
+  estimatedEmails,
+  isFormValid,
+}) {
   const rows = [
-    { label: 'Campaign', value: MODE_LABELS[mode] },
+    { label: 'Campaign Type', value: MODE_LABELS[mode] },
+    { label: 'Sender Email', value: senderEmail || '—' },
     { label: 'Recipients', value: recipientCount },
     { label: 'Attachments', value: attachmentCount },
-    { label: 'Variables', value: variableCount },
+    { label: 'Variables Detected', value: variableCount },
   ];
 
   return (
@@ -23,6 +34,20 @@ function CampaignSummary({ mode, recipientCount, attachmentCount, variableCount,
       <div className="campaign-summary__row campaign-summary__row--highlight">
         <span>Estimated Emails</span>
         <strong>{estimatedEmails}</strong>
+      </div>
+
+      <div className={`campaign-summary__status${isFormValid ? ' campaign-summary__status--ready' : ''}`}>
+        {isFormValid ? (
+          <>
+            <CheckCircle2 size={14} />
+            Ready to Send
+          </>
+        ) : (
+          <>
+            <AlertCircle size={14} />
+            Needs Attention
+          </>
+        )}
       </div>
     </div>
   );

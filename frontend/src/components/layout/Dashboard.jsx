@@ -8,7 +8,12 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <Sidebar mode={composer.mode} onModeChange={composer.handleModeChange} />
+      <Sidebar
+        mode={composer.mode}
+        onModeChange={composer.handleModeChange}
+        senderEmail={composer.senderEmail}
+        senderStatus={composer.senderStatus}
+      />
       <main className="dashboard__compose">
         <EmailForm composer={composer} />
       </main>
