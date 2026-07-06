@@ -1,7 +1,7 @@
 import { Variable } from 'lucide-react';
 import EmptyState from './ui/EmptyState';
 
-function PlaceholderHints({ headers }) {
+function PlaceholderHints({ headers, onInsert }) {
   if (!headers || headers.length === 0) {
     return (
       <EmptyState
@@ -15,7 +15,15 @@ function PlaceholderHints({ headers }) {
   return (
     <div className="placeholder-hints">
       {headers.map((header) => (
-        <code key={header} className="placeholder-hints__chip">{`{{${header}}}`}</code>
+        <button
+          key={header}
+          type="button"
+          className="placeholder-hints__chip"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => onInsert(header)}
+        >
+          {`{{${header}}}`}
+        </button>
       ))}
     </div>
   );
