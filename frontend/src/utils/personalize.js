@@ -1,6 +1,6 @@
 const PLACEHOLDER_REGEX = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
 
-function personalize(template, data) {
+export function personalize(template, data) {
   if (!template) return template;
 
   return template.replace(PLACEHOLDER_REGEX, (match, key) => {
@@ -8,5 +8,3 @@ function personalize(template, data) {
     return value !== undefined && value !== null ? String(value) : '';
   });
 }
-
-module.exports = personalize;
