@@ -31,26 +31,24 @@ export function useEmailComposer() {
   const messageRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    getSender()
+  function refreshSender() {
+    return getSender()
       .then((data) => {
-        if (cancelled) return;
-        if (data.email) {
+        if (data.email && data.configured) {
           setSenderEmail(data.email);
           setSenderStatus('connected');
         } else {
+          setSenderEmail(data.email || null);
           setSenderStatus('error');
         }
       })
       .catch(() => {
-        if (!cancelled) setSenderStatus('error');
+        setSenderStatus('error');
       });
+  }
 
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    refreshSender();
   }, []);
 
   function handleChange(event) {
@@ -251,12 +249,14 @@ export function useEmailComposer() {
 
   const hasContent = Boolean(form.subject.trim()) && Boolean(form.message.trim());
   const csvOverLimit = mode === 'csv' && csvRows.length > MAX_RECIPIENTS;
+  const smtpConfigured = senderStatus === 'connected';
 
   const filledBulkRecipients = recipients.map((email) => email.trim()).filter(Boolean);
   const bulkRecipientsValid =
     filledBulkRecipients.length > 0 && filledBulkRecipients.every(isValidEmail);
 
   const isFormValid =
+    smtpConfigured &&
     hasContent &&
     !csvOverLimit &&
     (mode === 'single'
@@ -264,6 +264,20 @@ export function useEmailComposer() {
       : mode === 'bulk'
         ? bulkRecipientsValid
         : estimatedEmails > 0);
+
+  function getValidationMessage() {
+    if (!smtpConfigured) return 'Configure SMTP Settings before sending.';
+    if (mode === 'single' && !isValidEmail(form.to.trim())) return 'Enter a valid recipient email.';
+    if (mode === 'bulk' && !bulkRecipientsValid) return 'Add at least one valid recipient.';
+    if (mode === 'csv' && csvRows.length === 0) return 'Upload a CSV file with recipients.';
+    if (mode === 'csv' && csvOverLimit) return `Maximum ${MAX_RECIPIENTS} recipients allowed.`;
+    if (mode === 'csv' && estimatedEmails === 0) return 'CSV has no valid recipients.';
+    if (!form.subject.trim()) return 'Subject is required.';
+    if (!form.message.trim()) return 'Message is required.';
+    return null;
+  }
+
+  const validationMessage = isFormValid ? null : getValidationMessage();
 
   return {
     mode,
@@ -291,6 +305,9 @@ export function useEmailComposer() {
     handleSubmit,
     senderEmail,
     senderStatus,
+    smtpConfigured,
+    refreshSender,
+    validationMessage,
     activeField,
     setActiveField,
     subjectRef,

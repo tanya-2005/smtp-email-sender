@@ -14,6 +14,7 @@ function SummaryPanel({ composer }) {
     recipients,
     csvRows,
     isFormValid,
+    validationMessage,
   } = composer;
 
   const variableCount = mode === 'csv' ? csvHeaders.length : 0;
@@ -33,6 +34,7 @@ function SummaryPanel({ composer }) {
           variableCount={variableCount}
           estimatedEmails={estimatedEmails}
           isFormValid={isFormValid}
+          validationMessage={validationMessage}
         />
       </div>
 

@@ -63,6 +63,7 @@ function EmailForm({ composer }) {
     insertEmoji,
     senderEmail,
     isFormValid,
+    validationMessage,
     maxRecipients,
   } = composer;
 
@@ -165,6 +166,9 @@ function EmailForm({ composer }) {
             </Section>
 
             <div className="panel__footer">
+              {!isFormValid && !isSending && validationMessage && (
+                <p className="panel__hint">{validationMessage}</p>
+              )}
               <button
                 type="submit"
                 className="btn btn--primary btn--block"

@@ -14,6 +14,7 @@ function CampaignSummary({
   variableCount,
   estimatedEmails,
   isFormValid,
+  validationMessage,
 }) {
   const rows = [
     { label: 'Campaign Type', value: MODE_LABELS[mode] },
@@ -45,7 +46,7 @@ function CampaignSummary({
         ) : (
           <>
             <AlertCircle size={14} />
-            Needs Attention
+            {validationMessage || 'Needs Attention'}
           </>
         )}
       </div>

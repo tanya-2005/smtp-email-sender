@@ -1,23 +1,41 @@
+import { useState } from 'react';
 import { useEmailComposer } from '../../hooks/useEmailComposer';
 import Sidebar from './Sidebar';
 import SummaryPanel from './SummaryPanel';
 import EmailForm from '../EmailForm';
+import SettingsPage from '../SettingsPage';
 
 function Dashboard() {
   const composer = useEmailComposer();
+  const [view, setView] = useState('compose');
+
+  function handleNavChange(next) {
+    if (next === 'settings') {
+      setView('settings');
+    } else {
+      setView('compose');
+      composer.handleModeChange(next);
+    }
+  }
+
+  const activeNav = view === 'settings' ? 'settings' : composer.mode;
 
   return (
     <div className="dashboard">
       <Sidebar
-        mode={composer.mode}
-        onModeChange={composer.handleModeChange}
+        activeNav={activeNav}
+        onNavChange={handleNavChange}
         senderEmail={composer.senderEmail}
         senderStatus={composer.senderStatus}
       />
       <main className="dashboard__compose">
-        <EmailForm composer={composer} />
+        {view === 'settings' ? (
+          <SettingsPage onSaved={composer.refreshSender} />
+        ) : (
+          <EmailForm composer={composer} />
+        )}
       </main>
-      <SummaryPanel composer={composer} />
+      {view === 'compose' && <SummaryPanel composer={composer} />}
     </div>
   );
 }
