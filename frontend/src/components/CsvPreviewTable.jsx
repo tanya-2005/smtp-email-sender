@@ -4,19 +4,8 @@ import { isValidEmail } from '../utils/isValidEmail';
 function CsvPreviewTable({ headers, rows, onRemove }) {
   if (rows.length === 0) return null;
 
-  const invalidCount = rows.filter((row) => !isValidEmail(row.email)).length;
-
   return (
     <div className="csv-preview">
-      <div className="csv-preview__meta">
-        <span>{rows.length} recipient{rows.length === 1 ? '' : 's'} imported</span>
-        {invalidCount > 0 && (
-          <span className="csv-preview__invalid-count">
-            {invalidCount} invalid email{invalidCount === 1 ? '' : 's'} will be skipped
-          </span>
-        )}
-      </div>
-
       <div className="csv-preview__table-wrapper">
         <table className="csv-preview__table">
           <thead>

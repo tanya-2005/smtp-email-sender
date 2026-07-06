@@ -1,4 +1,5 @@
 const mailerService = require('../services/mailer.service');
+const env = require('../config/env');
 
 function buildAttachments(files) {
   return (files || []).map((file) => ({
@@ -44,4 +45,8 @@ async function sendPersonalizedEmail(req, res, next) {
   }
 }
 
-module.exports = { sendEmail, sendBulkEmail, sendPersonalizedEmail };
+function getSender(req, res) {
+  res.status(200).json({ email: env.smtp.user || null });
+}
+
+module.exports = { sendEmail, sendBulkEmail, sendPersonalizedEmail, getSender };

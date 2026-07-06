@@ -1,5 +1,10 @@
 import apiClient from './client';
 
+export async function getSender() {
+  const response = await apiClient.get('/emails/sender');
+  return response.data;
+}
+
 export async function sendEmail({ to, subject, message, attachments = [] }) {
   const formData = new FormData();
   formData.append('to', to);
