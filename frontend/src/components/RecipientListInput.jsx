@@ -1,3 +1,5 @@
+import { Plus, X } from 'lucide-react';
+
 function RecipientListInput({ recipients, onChange, onAdd, onRemove }) {
   return (
     <div className="recipient-list">
@@ -17,14 +19,14 @@ function RecipientListInput({ recipients, onChange, onAdd, onRemove }) {
               onClick={() => onRemove(index)}
               aria-label={`Remove recipient ${index + 1}`}
             >
-              &times;
+              <X size={15} />
             </button>
           )}
         </div>
       ))}
 
       <button type="button" className="recipient-add" onClick={onAdd}>
-        + Add recipient
+        <Plus size={14} /> Add recipient
       </button>
     </div>
   );

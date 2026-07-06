@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { parseCsvFile } from '../utils/csvParser';
+import Dropzone from './ui/Dropzone';
 
 function CsvUpload({ onParsed, onError }) {
   const inputRef = useRef(null);
 
-  async function handleChange(event) {
-    const file = event.target.files[0];
+  async function handleFiles(fileList) {
+    const file = fileList[0];
     if (!file) return;
 
     try {
@@ -19,19 +20,14 @@ function CsvUpload({ onParsed, onError }) {
   }
 
   return (
-    <div className="csv-upload">
-      <input
-        id="csv-upload"
-        type="file"
-        className="file-input"
-        accept=".csv,text/csv"
-        onChange={handleChange}
-        ref={inputRef}
-      />
-      <span className="file-hint">
-        CSV with headers, e.g. Name, Email, Company. Must include an Email column.
-      </span>
-    </div>
+    <Dropzone
+      id="csv-upload"
+      accept=".csv,text/csv"
+      onFiles={handleFiles}
+      inputRef={inputRef}
+      title="Drop your CSV here, or click to browse"
+      subtitle="Must include an Email column (e.g. Name, Email, Company)"
+    />
   );
 }
 

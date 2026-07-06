@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { isValidEmail } from '../utils/isValidEmail';
 
 function CsvPreviewTable({ headers, rows, onRemove }) {
@@ -41,7 +42,7 @@ function CsvPreviewTable({ headers, rows, onRemove }) {
                       onClick={() => onRemove(row._id)}
                       aria-label={`Remove row for ${row.email || 'unknown'}`}
                     >
-                      &times;
+                      <X size={14} />
                     </button>
                   </td>
                 </tr>
