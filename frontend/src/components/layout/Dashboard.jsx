@@ -4,21 +4,25 @@ import Sidebar from './Sidebar';
 import SummaryPanel from './SummaryPanel';
 import EmailForm from '../EmailForm';
 import SettingsPage from '../SettingsPage';
+import WebhookPage from '../WebhookPage';
+import WebhookLogsPage from '../WebhookLogsPage';
+
+const STANDALONE_VIEWS = ['settings', 'webhook', 'webhookLogs'];
 
 function Dashboard() {
   const composer = useEmailComposer();
   const [view, setView] = useState('compose');
 
   function handleNavChange(next) {
-    if (next === 'settings') {
-      setView('settings');
+    if (STANDALONE_VIEWS.includes(next)) {
+      setView(next);
     } else {
       setView('compose');
       composer.handleModeChange(next);
     }
   }
 
-  const activeNav = view === 'settings' ? 'settings' : composer.mode;
+  const activeNav = STANDALONE_VIEWS.includes(view) ? view : composer.mode;
 
   return (
     <div className="dashboard">
@@ -29,11 +33,10 @@ function Dashboard() {
         senderStatus={composer.senderStatus}
       />
       <main className="dashboard__compose">
-        {view === 'settings' ? (
-          <SettingsPage onSaved={composer.refreshSender} />
-        ) : (
-          <EmailForm composer={composer} />
-        )}
+        {view === 'settings' && <SettingsPage onSaved={composer.refreshSender} />}
+        {view === 'webhook' && <WebhookPage />}
+        {view === 'webhookLogs' && <WebhookLogsPage />}
+        {view === 'compose' && <EmailForm composer={composer} />}
       </main>
       {view === 'compose' && <SummaryPanel composer={composer} />}
     </div>

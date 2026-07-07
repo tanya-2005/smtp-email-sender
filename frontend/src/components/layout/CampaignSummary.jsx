@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 const MODE_LABELS = {
-  single: 'Single Email',
+  single: 'Manual Email',
   bulk: 'Bulk Email',
   csv: 'CSV Personalization',
 };

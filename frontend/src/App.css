@@ -315,6 +315,13 @@
   border-bottom: none;
 }
 
+.section__description {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
 .section__header {
   display: flex;
   align-items: center;

@@ -25,7 +25,7 @@ import MessageComposer from './MessageComposer';
 import SuccessScreen from './SuccessScreen';
 
 const MODE_OPTIONS = [
-  { value: 'single', label: 'Single', icon: Mail },
+  { value: 'single', label: 'Manual', icon: Mail },
   { value: 'bulk', label: 'Bulk', icon: List },
   { value: 'csv', label: 'CSV Personalization', icon: FileSpreadsheet },
 ];

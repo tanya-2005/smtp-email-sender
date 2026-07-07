@@ -1,10 +1,12 @@
-import { FileSpreadsheet, List, Mail, Send, Settings } from 'lucide-react';
+import { FileSpreadsheet, List, Mail, ScrollText, Send, Settings, Webhook } from 'lucide-react';
 import SenderCard from './SenderCard';
 
 const NAV_ITEMS = [
-  { value: 'single', label: 'Single Email', icon: Mail },
+  { value: 'webhook', label: 'Webhook', icon: Webhook },
+  { value: 'single', label: 'Manual Email', icon: Mail },
   { value: 'bulk', label: 'Bulk Email', icon: List },
   { value: 'csv', label: 'CSV Personalization', icon: FileSpreadsheet },
+  { value: 'webhookLogs', label: 'Webhook Logs', icon: ScrollText },
   { value: 'settings', label: 'Sender Account', icon: Settings },
 ];
 
