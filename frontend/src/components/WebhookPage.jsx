@@ -12,12 +12,21 @@ const EXAMPLE_PAYLOAD = {
   attachments: [{ filename: 'invoice.pdf', contentType: 'application/pdf', content: '<base64-encoded-file>' }],
 };
 
+const SUCCESS_RESPONSE = {
+  message: 'Email sent successfully',
+  messageId: '<abc123@mail.example.com>',
+};
+
+const VALIDATION_ERROR_RESPONSE = {
+  errors: ['"recipientEmail" is required and must be a valid email address'],
+};
+
 const FIELDS = [
   { name: 'recipientEmail', required: 'Yes', description: 'Recipient email address.' },
   { name: 'recipientName', required: 'No', description: 'Recipient display name. Usable as {{name}} in subject/body/html.' },
-  { name: 'subject', required: 'Yes', description: 'Email subject line.' },
-  { name: 'body', required: 'body or html', description: 'Plain-text email content.' },
-  { name: 'html', required: 'body or html', description: 'HTML email content.' },
+  { name: 'subject', required: 'Yes', description: 'Email subject line. Supports {{name}} / {{email}} placeholders.' },
+  { name: 'body', required: 'body or html', description: 'Plain-text email content. Supports placeholders.' },
+  { name: 'html', required: 'body or html', description: 'HTML email content. Supports placeholders.' },
   {
     name: 'attachments',
     required: 'No',
@@ -25,15 +34,44 @@ const FIELDS = [
   },
 ];
 
-function WebhookPage({ senderEmail, senderStatus }) {
+const STATUS_CODES = [
+  { code: '200', meaning: 'Email sent successfully. Response includes the SMTP messageId.' },
+  { code: '400', meaning: 'Payload failed validation (missing/invalid fields) or the JSON body could not be parsed. See the errors array.' },
+  { code: '413', meaning: 'Request payload too large - reduce attachment size or count.' },
+  { code: '502', meaning: 'The SMTP server rejected the send (e.g. bad credentials, recipient refused).' },
+  { code: '503', meaning: 'The Sender Account has not been configured yet.' },
+];
+
+function CopyBlock({ text, display, multiline }) {
   const [copied, setCopied] = useState(false);
-  const endpoint = `${apiClient.defaults.baseURL}/webhook`;
 
   function handleCopy() {
-    navigator.clipboard.writeText(endpoint);
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
+
+  return (
+    <div className={multiline ? 'code-block code-block--multiline' : 'code-block'}>
+      {multiline ? <pre>{display}</pre> : <code>{display}</code>}
+      <button type="button" className="btn btn--icon" onClick={handleCopy} aria-label="Copy to clipboard">
+        {copied ? <Check size={15} /> : <Copy size={15} />}
+      </button>
+    </div>
+  );
+}
+
+function WebhookPage({ senderEmail, senderStatus }) {
+  const endpoint = `${apiClient.defaults.baseURL}/webhook`;
+
+  const curlExample = `curl -X POST ${endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "recipientEmail": "jane@example.com",
+    "recipientName": "Jane",
+    "subject": "Welcome, {{name}}!",
+    "body": "Hi {{name}}, thanks for signing up."
+  }'`;
 
   return (
     <div className="panel">
@@ -45,12 +83,7 @@ function WebhookPage({ senderEmail, senderStatus }) {
           configured Sender Account.
         </p>
 
-        <div className="code-block">
-          <code>POST {endpoint}</code>
-          <button type="button" className="btn btn--icon" onClick={handleCopy} aria-label="Copy endpoint URL">
-            {copied ? <Check size={15} /> : <Copy size={15} />}
-          </button>
-        </div>
+        <CopyBlock text={endpoint} display={`POST ${endpoint}`} />
 
         {senderStatus !== 'connected' && (
           <p className="webhook-hint webhook-hint--warning">
@@ -65,6 +98,9 @@ function WebhookPage({ senderEmail, senderStatus }) {
       </Section>
 
       <Section title="Example payload">
+        <p className="section__description">
+          Send this as the JSON request body with header <code>Content-Type: application/json</code>.
+        </p>
         <pre className="payload-example">{JSON.stringify(EXAMPLE_PAYLOAD, null, 2)}</pre>
       </Section>
 
@@ -91,6 +127,44 @@ function WebhookPage({ senderEmail, senderStatus }) {
             </tbody>
           </table>
         </div>
+      </Section>
+
+      <Section title="Try it (cURL)">
+        <CopyBlock text={curlExample} display={curlExample} multiline />
+      </Section>
+
+      <Section title="Responses">
+        <p className="webhook-response-label">Success - 200</p>
+        <pre className="payload-example">{JSON.stringify(SUCCESS_RESPONSE, null, 2)}</pre>
+        <p className="webhook-response-label webhook-response-label--spaced">Validation error - 400</p>
+        <pre className="payload-example">{JSON.stringify(VALIDATION_ERROR_RESPONSE, null, 2)}</pre>
+      </Section>
+
+      <Section title="Status codes">
+        <div className="csv-preview__table-wrapper">
+          <table className="webhook-fields">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              {STATUS_CODES.map((row) => (
+                <tr key={row.code}>
+                  <td>
+                    <code>{row.code}</code>
+                  </td>
+                  <td>{row.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="webhook-hint">
+          Every request to this endpoint - successful or not - is recorded on the Webhook Logs page,
+          including the full payload received.
+        </p>
       </Section>
     </div>
   );
