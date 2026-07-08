@@ -17,6 +17,7 @@ import Section from './ui/Section';
 import Skeleton from './ui/Skeleton';
 
 const PROVIDERS = [
+  { value: 'resend', label: 'Resend' },
   { value: 'gmail', label: 'Gmail' },
   { value: 'outlook', label: 'Outlook' },
   { value: 'yahoo', label: 'Yahoo' },
@@ -25,6 +26,7 @@ const PROVIDERS = [
 ];
 
 const PASSWORD_HINTS = {
+  resend: 'Use your Resend API key',
   gmail: 'Use your Google App Password',
   outlook: 'Use your Outlook Password (or App Password if required)',
   yahoo: 'Use your Yahoo App Password',
@@ -33,6 +35,15 @@ const PASSWORD_HINTS = {
 };
 
 const APP_PASSWORD_HELP = {
+  resend: {
+    steps: [
+      'Sign up for a free account at resend.com (no credit card required).',
+      'Go to API Keys and create a new key - the default "Sending access" scope is fine.',
+      'Paste the key here.',
+    ],
+    link: 'https://resend.com/api-keys',
+    linkLabel: 'Open Resend API Keys',
+  },
   gmail: {
     steps: [
       'Turn on 2-Step Verification on your Google Account.',
@@ -40,6 +51,7 @@ const APP_PASSWORD_HELP = {
       'Generate a new App Password and paste it here.',
     ],
     link: 'https://myaccount.google.com/apppasswords',
+    linkLabel: 'Open Google App Passwords',
   },
   outlook: {
     steps: [
@@ -66,7 +78,7 @@ const APP_PASSWORD_HELP = {
 };
 
 const INITIAL_FORM = {
-  provider: 'gmail',
+  provider: 'resend',
   senderName: '',
   senderEmail: '',
   password: '',
@@ -91,7 +103,7 @@ function SettingsPage({ onSaved }) {
     getSettings()
       .then((data) => {
         setForm({
-          provider: data.provider || 'gmail',
+          provider: data.provider || 'resend',
           senderName: data.senderName || '',
           senderEmail: data.senderEmail || '',
           password: '',
@@ -125,6 +137,7 @@ function SettingsPage({ onSaved }) {
   }
 
   const isCustom = form.provider === 'custom';
+  const isResend = form.provider === 'resend';
   const canSubmit =
     isValidEmail(form.senderEmail.trim()) &&
     (!isCustom || (form.host.trim() && form.port));
@@ -215,13 +228,17 @@ function SettingsPage({ onSaved }) {
             </div>
 
             <div className="form-field">
-              <label htmlFor="password">Password / App Password</label>
+              <label htmlFor="password">{isResend ? 'Resend API Key' : 'Password / App Password'}</label>
               <div className="password-field">
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={hasPassword ? 'Leave blank to keep current password' : 'Enter password'}
+                  placeholder={
+                    hasPassword
+                      ? `Leave blank to keep current ${isResend ? 'key' : 'password'}`
+                      : `Enter ${isResend ? 'API key' : 'password'}`
+                  }
                   value={form.password}
                   onChange={handleChange}
                   autoComplete="new-password"
@@ -285,7 +302,7 @@ function SettingsPage({ onSaved }) {
 
           <button type="button" className="help-toggle" onClick={() => setShowHelp((prev) => !prev)}>
             <HelpCircle size={13} />
-            Need an App Password? Click here.
+            {isResend ? 'Need a Resend API Key? Click here.' : 'Need an App Password? Click here.'}
           </button>
 
           {showHelp && help && (
@@ -297,7 +314,7 @@ function SettingsPage({ onSaved }) {
               </ol>
               {help.link && (
                 <a href={help.link} target="_blank" rel="noreferrer">
-                  Open Google App Passwords →
+                  {help.linkLabel} →
                 </a>
               )}
             </div>
