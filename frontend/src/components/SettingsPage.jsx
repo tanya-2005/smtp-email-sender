@@ -16,76 +16,25 @@ import { useToast } from '../hooks/useToast';
 import Section from './ui/Section';
 import Skeleton from './ui/Skeleton';
 
-const PROVIDERS = [
-  { value: 'resend', label: 'Resend' },
-  { value: 'gmail', label: 'Gmail' },
-  { value: 'outlook', label: 'Outlook' },
-  { value: 'yahoo', label: 'Yahoo' },
-  { value: 'zoho', label: 'Zoho' },
-  { value: 'custom', label: 'Custom SMTP' },
-];
+const PROVIDER = 'resend';
 
-const PASSWORD_HINTS = {
-  resend: 'Use your Resend API key',
-  gmail: 'Use your Google App Password',
-  outlook: 'Use your Outlook Password (or App Password if required)',
-  yahoo: 'Use your Yahoo App Password',
-  zoho: 'Use your Zoho Password',
-  custom: 'Use the password for your SMTP account',
-};
+const PASSWORD_HINT = 'This is your Resend API key, not an email password.';
 
-const APP_PASSWORD_HELP = {
-  resend: {
-    steps: [
-      'Sign up for a free account at resend.com (no credit card required).',
-      'Go to API Keys and create a new key - the default "Sending access" scope is fine.',
-      'Paste the key here.',
-    ],
-    link: 'https://resend.com/api-keys',
-    linkLabel: 'Open Resend API Keys',
-  },
-  gmail: {
-    steps: [
-      'Turn on 2-Step Verification on your Google Account.',
-      'Go to Google Account → Security → App Passwords.',
-      'Generate a new App Password and paste it here.',
-    ],
-    link: 'https://myaccount.google.com/apppasswords',
-    linkLabel: 'Open Google App Passwords',
-  },
-  outlook: {
-    steps: [
-      'Try your regular Outlook / Microsoft 365 password first.',
-      'If it is rejected, your organization may require an App Password - generate one from Microsoft Account → Security → Advanced security options.',
-    ],
-  },
-  yahoo: {
-    steps: [
-      'Turn on 2-Step Verification on your Yahoo Account.',
-      'Go to Account Security → Generate app password.',
-      'Paste the generated password here.',
-    ],
-  },
-  zoho: {
-    steps: [
-      'Try your regular Zoho Mail password first.',
-      'If your account has two-factor authentication enabled, generate an Application-Specific Password from Zoho Account → Security instead.',
-    ],
-  },
-  custom: {
-    steps: ['Use the credentials provided by your SMTP server administrator.'],
-  },
+const RESEND_HELP = {
+  steps: [
+    'Sign up for a free account at resend.com (no credit card required).',
+    'Go to API Keys and create a new key - the default "Sending access" scope is fine.',
+    'Paste the key here.',
+  ],
+  link: 'https://resend.com/api-keys',
+  linkLabel: 'Open Resend API Keys',
 };
 
 const INITIAL_FORM = {
-  provider: 'resend',
+  provider: PROVIDER,
   senderName: '',
   senderEmail: '',
   password: '',
-  host: '',
-  port: '',
-  secure: false,
-  username: '',
 };
 
 function SettingsPage({ onSaved }) {
@@ -103,14 +52,10 @@ function SettingsPage({ onSaved }) {
     getSettings()
       .then((data) => {
         setForm({
-          provider: data.provider || 'resend',
+          provider: PROVIDER,
           senderName: data.senderName || '',
           senderEmail: data.senderEmail || '',
           password: '',
-          host: data.host || '',
-          port: data.port || '',
-          secure: Boolean(data.secure),
-          username: data.username || '',
         });
         setHasPassword(data.hasPassword);
       })
@@ -125,23 +70,7 @@ function SettingsPage({ onSaved }) {
     setConnectionResult(null);
   }
 
-  function handleProviderChange(event) {
-    setForm((prev) => ({ ...prev, provider: event.target.value }));
-    setConnectionResult(null);
-    setShowHelp(false);
-  }
-
-  function handleSecureToggle(event) {
-    setForm((prev) => ({ ...prev, secure: event.target.checked }));
-    setConnectionResult(null);
-  }
-
-  const isCustom = form.provider === 'custom';
-  const isResend = form.provider === 'resend';
-  const canSubmit =
-    isValidEmail(form.senderEmail.trim()) &&
-    (!isCustom || (form.host.trim() && form.port));
-  const help = APP_PASSWORD_HELP[form.provider];
+  const canSubmit = isValidEmail(form.senderEmail.trim());
 
   async function handleTest() {
     setIsTesting(true);
@@ -190,18 +119,14 @@ function SettingsPage({ onSaved }) {
     <div className="panel">
       <form onSubmit={handleSave}>
         <Section icon={SettingsIcon} title="Sender Account">
-          <div className="settings-grid">
-            <div className="form-field">
-              <label htmlFor="provider">Email Provider</label>
-              <select id="provider" name="provider" value={form.provider} onChange={handleProviderChange}>
-                {PROVIDERS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <p className="section__description">
+            This application sends all outgoing email through Resend (resend.com) - there is no SMTP or
+            other provider option. Paste your Resend API key below. Note: in Resend's sandbox mode (before
+            you verify a sending domain), you can only deliver to the email address on your own Resend
+            account.
+          </p>
 
+          <div className="settings-grid">
             <div className="form-field">
               <label htmlFor="senderName">Sender Name</label>
               <input
@@ -227,18 +152,14 @@ function SettingsPage({ onSaved }) {
               />
             </div>
 
-            <div className="form-field">
-              <label htmlFor="password">{isResend ? 'Resend API Key' : 'Password / App Password'}</label>
+            <div className="form-field form-field--full">
+              <label htmlFor="password">Resend API Key</label>
               <div className="password-field">
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={
-                    hasPassword
-                      ? `Leave blank to keep current ${isResend ? 'key' : 'password'}`
-                      : `Enter ${isResend ? 'API key' : 'password'}`
-                  }
+                  placeholder={hasPassword ? 'Leave blank to keep current key' : 'Enter API key'}
                   value={form.password}
                   onChange={handleChange}
                   autoComplete="new-password"
@@ -252,71 +173,25 @@ function SettingsPage({ onSaved }) {
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              <span className="form-field__hint">{PASSWORD_HINTS[form.provider]}</span>
+              <span className="form-field__hint">{PASSWORD_HINT}</span>
             </div>
-
-            {isCustom && (
-              <>
-                <div className="form-field">
-                  <label htmlFor="username">Username</label>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    placeholder="Defaults to Email Address if left blank"
-                    value={form.username}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-field">
-                  <label htmlFor="host">SMTP Host</label>
-                  <input
-                    id="host"
-                    name="host"
-                    type="text"
-                    placeholder="smtp.example.com"
-                    value={form.host}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-field">
-                  <label htmlFor="port">SMTP Port</label>
-                  <input
-                    id="port"
-                    name="port"
-                    type="number"
-                    placeholder="587"
-                    value={form.port}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-field form-field--checkbox">
-                  <label htmlFor="secure">
-                    <input id="secure" name="secure" type="checkbox" checked={form.secure} onChange={handleSecureToggle} />
-                    Secure (SSL/TLS)
-                  </label>
-                </div>
-              </>
-            )}
           </div>
 
           <button type="button" className="help-toggle" onClick={() => setShowHelp((prev) => !prev)}>
             <HelpCircle size={13} />
-            {isResend ? 'Need a Resend API Key? Click here.' : 'Need an App Password? Click here.'}
+            Need a Resend API Key? Click here.
           </button>
 
-          {showHelp && help && (
+          {showHelp && (
             <div className="help-box">
               <ol>
-                {help.steps.map((step) => (
+                {RESEND_HELP.steps.map((step) => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>
-              {help.link && (
-                <a href={help.link} target="_blank" rel="noreferrer">
-                  {help.linkLabel} →
-                </a>
-              )}
+              <a href={RESEND_HELP.link} target="_blank" rel="noreferrer">
+                {RESEND_HELP.linkLabel} →
+              </a>
             </div>
           )}
 

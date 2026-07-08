@@ -1306,6 +1306,10 @@
   box-shadow: var(--shadow-glow);
 }
 
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
 .form-field--checkbox {
   justify-content: flex-end;
 }
