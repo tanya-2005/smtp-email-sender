@@ -1,6 +1,6 @@
-const nodemailer = require('nodemailer');
 const settingsService = require('../services/settings.service');
-const logSmtpError = require('../utils/logSmtpError');
+const resendService = require('../services/resend.service');
+const logMailError = require('../utils/logMailError');
 
 function getSettings(req, res) {
   const settings = settingsService.readSettings();
@@ -13,21 +13,17 @@ function resolvePassword(req) {
 }
 
 function formatConnectionError(err) {
-  return err.code ? `${err.message} (${err.code})` : err.message;
+  return err.status ? `${err.message} (${err.status})` : err.message;
 }
 
 async function verifyCandidate(candidate) {
-  const { from, ...transportOptions } = await settingsService.resolveSmtpConfig(candidate);
-  const target = `${transportOptions.servername} (${transportOptions.host}):${transportOptions.port}`;
-  console.log(`[SMTP] Verifying connection to ${target} (secure=${transportOptions.secure})`);
-
-  const transporter = nodemailer.createTransport(transportOptions);
+  console.log(`[Resend] Verifying API key for ${candidate.senderEmail}`);
 
   try {
-    await transporter.verify();
-    console.log(`[SMTP] Verified connection to ${target}`);
+    await resendService.verifyApiKey(candidate.password);
+    console.log(`[Resend] API key verified for ${candidate.senderEmail}`);
   } catch (err) {
-    logSmtpError(`verify ${target}`, err);
+    logMailError(`verify Resend API key for ${candidate.senderEmail}`, err);
     throw err;
   }
 }
@@ -40,7 +36,7 @@ async function saveSettings(req, res) {
     await verifyCandidate(candidate);
     res.status(200).json({
       ...settingsService.toPublicSettings(saved),
-      connection: { success: true, message: `Connected as ${settingsService.resolveAuthUser(candidate)}` },
+      connection: { success: true, message: `Connected to Resend as ${candidate.senderEmail}` },
     });
   } catch (err) {
     res.status(200).json({
@@ -55,7 +51,7 @@ async function testConnection(req, res) {
 
   try {
     await verifyCandidate(candidate);
-    res.status(200).json({ success: true, message: `Connected as ${settingsService.resolveAuthUser(candidate)}` });
+    res.status(200).json({ success: true, message: `Connected to Resend as ${candidate.senderEmail}` });
   } catch (err) {
     res.status(200).json({ success: false, message: formatConnectionError(err) });
   }

@@ -8,7 +8,6 @@ function buildAttachments(attachments) {
   return (attachments || []).map((attachment) => ({
     filename: attachment.filename,
     content: attachment.content,
-    encoding: 'base64',
     contentType: attachment.contentType,
   }));
 }

@@ -1,9 +1,12 @@
 {
   "name": "smtp-email-sender",
   "version": "1.0.0",
-  "description": "Production-quality SMTP email sender service built with Node.js and Express",
+  "description": "Production-quality email sender service built with Node.js, Express, and the Resend API",
   "main": "src/server.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
@@ -14,7 +17,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "morgan": "^1.10.0",
-    "multer": "^2.2.0",
-    "nodemailer": "^9.0.3"
+    "multer": "^2.2.0"
   }
 }

@@ -1,43 +1,40 @@
-const nodemailer = require('nodemailer');
 const AppError = require('../utils/AppError');
 const isValidEmail = require('../utils/isValidEmail');
 const personalize = require('../utils/personalize');
-const logSmtpError = require('../utils/logSmtpError');
+const logMailError = require('../utils/logMailError');
+const resendService = require('./resend.service');
 const settingsService = require('./settings.service');
 
 function assertConfigured() {
   const settings = settingsService.readSettings();
   if (!settingsService.isConfigured(settings)) {
-    throw new AppError('SMTP is not configured. Please set up SMTP Settings first.', 503);
+    throw new AppError('Sender Account is not configured. Please set up your Sender Account first.', 503);
   }
   return settings;
 }
 
-async function getTransporter() {
-  const settings = assertConfigured();
-  const { from, ...transportOptions } = await settingsService.resolveSmtpConfig(settings);
-  const transporter = nodemailer.createTransport(transportOptions);
-
-  return { transporter, from };
+function buildFrom(settings) {
+  return settings.senderName ? `"${settings.senderName}" <${settings.senderEmail}>` : settings.senderEmail;
 }
 
 async function verifyConnection() {
-  const { transporter } = await getTransporter();
+  const settings = assertConfigured();
 
   try {
-    await transporter.verify();
+    await resendService.verifyApiKey(settings.password);
   } catch (err) {
-    logSmtpError('startup verifyConnection', err);
+    logMailError('startup verifyConnection', err);
     throw err;
   }
 }
 
 async function sendMail({ to, subject, text, html, attachments }) {
-  const { transporter, from } = await getTransporter();
+  const settings = assertConfigured();
 
   try {
-    const info = await transporter.sendMail({
-      from,
+    const info = await resendService.sendEmail({
+      apiKey: settings.password,
+      from: buildFrom(settings),
       to,
       subject,
       text,
@@ -46,7 +43,7 @@ async function sendMail({ to, subject, text, html, attachments }) {
     });
     return info;
   } catch (err) {
-    logSmtpError(`sendMail to ${to}`, err);
+    logMailError(`sendMail to ${to}`, err);
     throw new AppError(`Failed to send email: ${err.message}`, 502);
   }
 }

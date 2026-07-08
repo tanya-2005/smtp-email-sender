@@ -7,8 +7,8 @@ app.listen(env.port, async () => {
 
   try {
     await mailerService.verifyConnection();
-    console.log('SMTP connection verified successfully');
+    console.log('Resend connection verified successfully');
   } catch (err) {
-    console.warn(`SMTP connection verification failed: ${err.message}`);
+    console.warn(`Resend connection verification failed: ${err.message}`);
   }
 });

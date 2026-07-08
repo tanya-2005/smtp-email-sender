@@ -1,13 +1,5 @@
 const fs = require('fs');
-const net = require('net');
-const dns = require('dns').promises;
 const path = require('path');
-const SMTP_PROVIDERS = require('../config/smtpProviders');
-const {
-  SMTP_CONNECTION_TIMEOUT_MS,
-  SMTP_GREETING_TIMEOUT_MS,
-  SMTP_SOCKET_TIMEOUT_MS,
-} = require('../config/limits');
 
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
@@ -44,69 +36,16 @@ function writeSettings(settings) {
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
 }
 
+// "password" holds the Resend API key and "senderEmail" is the from address -
+// provider/host/port/secure/username are still stored (the UI still shows
+// them) but no longer affect how mail is actually sent.
 function isConfigured(settings) {
-  if (!settings.provider || !settings.senderEmail || !settings.password) return false;
-  if (settings.provider === 'custom') return Boolean(settings.host && settings.port);
-  return true;
+  return Boolean(settings.senderEmail && settings.password);
 }
 
 function toPublicSettings(settings) {
   const { password, ...rest } = settings;
   return { ...rest, hasPassword: Boolean(password), configured: isConfigured(settings) };
-}
-
-function resolveAuthUser(settings) {
-  if (settings.provider === 'custom' && settings.username && settings.username.trim()) {
-    return settings.username.trim();
-  }
-  return settings.senderEmail;
-}
-
-// Nodemailer resolves both A and AAAA records itself and picks *randomly*
-// between them (see nodemailer/lib/shared/index.js formatDNSValue), so on
-// hosts without real IPv6 egress (e.g. Railway) a send can intermittently
-// fail with ENETUNREACH when it happens to pick an IPv6 address. Nodemailer
-// has no option to force a family, but it skips its own DNS resolution
-// entirely when `host` is already an IP literal - so we resolve to IPv4
-// ourselves and pass that IP straight through, forcing every connection
-// attempt onto IPv4 deterministically.
-async function resolveIPv4Host(host) {
-  if (!host || net.isIP(host)) return host;
-
-  try {
-    const { address } = await dns.lookup(host, { family: 4 });
-    return address;
-  } catch {
-    // No IPv4 address available (or resolution failed) - fall back to the
-    // original hostname rather than breaking the connection attempt.
-    return host;
-  }
-}
-
-async function resolveSmtpConfig(settings) {
-  const preset = SMTP_PROVIDERS[settings.provider];
-  if (!preset) throw new Error('Unknown SMTP provider');
-
-  const { host, port, secure } =
-    settings.provider === 'custom'
-      ? { host: settings.host, port: Number(settings.port), secure: Boolean(settings.secure) }
-      : preset;
-
-  const ipv4Host = await resolveIPv4Host(host);
-
-  return {
-    host: ipv4Host,
-    port,
-    secure,
-    // Preserve the real hostname for TLS SNI and certificate validation,
-    // since we're now connecting via a resolved IP literal instead of it.
-    servername: host,
-    auth: { user: resolveAuthUser(settings), pass: settings.password },
-    from: settings.senderName ? `"${settings.senderName}" <${settings.senderEmail}>` : settings.senderEmail,
-    connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
-    greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
-    socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
-  };
 }
 
 function saveSettings(input) {
@@ -133,6 +72,4 @@ module.exports = {
   saveSettings,
   isConfigured,
   toPublicSettings,
-  resolveSmtpConfig,
-  resolveAuthUser,
 };
