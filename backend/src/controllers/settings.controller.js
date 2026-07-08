@@ -17,8 +17,8 @@ function formatConnectionError(err) {
 }
 
 async function verifyCandidate(candidate) {
-  const { from, ...transportOptions } = settingsService.resolveSmtpConfig(candidate);
-  const target = `${transportOptions.host}:${transportOptions.port}`;
+  const { from, ...transportOptions } = await settingsService.resolveSmtpConfig(candidate);
+  const target = `${transportOptions.servername} (${transportOptions.host}):${transportOptions.port}`;
   console.log(`[SMTP] Verifying connection to ${target} (secure=${transportOptions.secure})`);
 
   const transporter = nodemailer.createTransport(transportOptions);

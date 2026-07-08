@@ -13,16 +13,16 @@ function assertConfigured() {
   return settings;
 }
 
-function getTransporter() {
+async function getTransporter() {
   const settings = assertConfigured();
-  const { from, ...transportOptions } = settingsService.resolveSmtpConfig(settings);
+  const { from, ...transportOptions } = await settingsService.resolveSmtpConfig(settings);
   const transporter = nodemailer.createTransport(transportOptions);
 
   return { transporter, from };
 }
 
 async function verifyConnection() {
-  const { transporter } = getTransporter();
+  const { transporter } = await getTransporter();
 
   try {
     await transporter.verify();
@@ -33,7 +33,7 @@ async function verifyConnection() {
 }
 
 async function sendMail({ to, subject, text, html, attachments }) {
-  const { transporter, from } = getTransporter();
+  const { transporter, from } = await getTransporter();
 
   try {
     const info = await transporter.sendMail({
