@@ -2,6 +2,8 @@ const mailerService = require('../services/mailer.service');
 const webhookLogService = require('../services/webhookLog.service');
 const personalize = require('../utils/personalize');
 
+const DEFAULT_SUBJECT = '(No subject)';
+
 function buildAttachments(attachments) {
   return (attachments || []).map((attachment) => ({
     filename: attachment.filename,
@@ -18,7 +20,7 @@ async function receiveWebhook(req, res, next) {
   try {
     const info = await mailerService.sendMail({
       to: recipientEmail,
-      subject: personalize(subject, personalizeData),
+      subject: personalize(subject || DEFAULT_SUBJECT, personalizeData),
       text: personalize(body, personalizeData),
       html: personalize(html, personalizeData),
       attachments: buildAttachments(attachments),
@@ -28,7 +30,7 @@ async function receiveWebhook(req, res, next) {
       status: 'success',
       recipientEmail,
       recipientName: recipientName || null,
-      subject,
+      subject: subject || null,
       messageId: info.messageId,
       error: null,
       payload: req.body,
@@ -40,7 +42,7 @@ async function receiveWebhook(req, res, next) {
       status: 'failed',
       recipientEmail,
       recipientName: recipientName || null,
-      subject,
+      subject: subject || null,
       messageId: null,
       error: err.message,
       payload: req.body,

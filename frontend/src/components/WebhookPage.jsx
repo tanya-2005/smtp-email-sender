@@ -24,7 +24,11 @@ const VALIDATION_ERROR_RESPONSE = {
 const FIELDS = [
   { name: 'recipientEmail', required: 'Yes', description: 'Recipient email address.' },
   { name: 'recipientName', required: 'No', description: 'Recipient display name. Usable as {{name}} in subject/body/html.' },
-  { name: 'subject', required: 'Yes', description: 'Email subject line. Supports {{name}} / {{email}} placeholders.' },
+  {
+    name: 'subject',
+    required: 'No',
+    description: 'Email subject line. Supports {{name}} / {{email}} placeholders. Defaults to "(No subject)" if omitted.',
+  },
   { name: 'body', required: 'body or html', description: 'Plain-text email content. Supports placeholders.' },
   { name: 'html', required: 'body or html', description: 'HTML email content. Supports placeholders.' },
   {

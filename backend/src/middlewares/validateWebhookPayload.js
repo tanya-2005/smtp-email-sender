@@ -49,8 +49,8 @@ function validateWebhookPayload(req, res, next) {
     errors.push('"recipientName" must be a string');
   }
 
-  if (!subject || typeof subject !== 'string' || !subject.trim()) {
-    errors.push('"subject" is required and must be a non-empty string');
+  if (subject !== undefined && (typeof subject !== 'string' || !subject.trim())) {
+    errors.push('"subject" must be a non-empty string when provided');
   }
 
   if (!body && !html) {
