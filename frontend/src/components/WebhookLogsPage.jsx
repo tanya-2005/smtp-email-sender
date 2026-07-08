@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronDown, RefreshCw, ScrollText, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Paperclip, RefreshCw, ScrollText, XCircle } from 'lucide-react';
 import { getWebhookLogs } from '../api/webhookApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { useToast } from '../hooks/useToast';
@@ -9,6 +9,7 @@ import Skeleton from './ui/Skeleton';
 
 function WebhookLogItem({ log }) {
   const success = log.status === 'success';
+  const attachmentCount = log.payload?.attachments?.length || 0;
 
   return (
     <li className="webhook-log-card">
@@ -31,6 +32,13 @@ function WebhookLogItem({ log }) {
       <div className="webhook-log-card__row">
         <strong>Message ID</strong>
         <span>{log.messageId || '—'}</span>
+      </div>
+      <div className="webhook-log-card__row">
+        <strong>Attachments</strong>
+        <span className="webhook-log-card__attachments">
+          {attachmentCount > 0 && <Paperclip size={12} />}
+          {attachmentCount}
+        </span>
       </div>
       {!success && (
         <div className="webhook-log-card__row">

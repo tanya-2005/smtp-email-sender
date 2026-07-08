@@ -1685,6 +1685,13 @@
   color: var(--error);
 }
 
+.webhook-log-card__attachments {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-hover);
+}
+
 .webhook-log-badge {
   display: inline-flex;
   align-items: center;
