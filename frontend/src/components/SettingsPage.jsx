@@ -12,7 +12,7 @@ import {
 import { getSettings, saveSettings, testSettingsConnection } from '../api/settingsApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { isValidEmail } from '../utils/isValidEmail';
-import { useToast } from './ui/ToastProvider';
+import { useToast } from '../hooks/useToast';
 import Section from './ui/Section';
 import Skeleton from './ui/Skeleton';
 

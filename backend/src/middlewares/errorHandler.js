@@ -15,6 +15,14 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({ error: MULTER_ERROR_MESSAGES[err.code] || err.message });
   }
 
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request payload too large. Reduce attachment size or count.' });
+  }
+
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Request body must be valid JSON.' });
+  }
+
   const status = err.status || 500;
   res.status(status).json({ error: err.message || 'Internal server error' });
 }

@@ -1,8 +1,6 @@
 const isValidEmail = require('../utils/isValidEmail');
 const webhookLogService = require('../services/webhookLog.service');
-
-const MAX_ATTACHMENTS = 10;
-const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+const { MAX_WEBHOOK_ATTACHMENTS: MAX_ATTACHMENTS, MAX_WEBHOOK_ATTACHMENT_SIZE_BYTES: MAX_ATTACHMENT_SIZE_BYTES } = require('../config/limits');
 
 function estimateBase64Size(base64) {
   return Math.ceil((base64.length * 3) / 4);

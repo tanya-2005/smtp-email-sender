@@ -5,7 +5,7 @@ import { partitionFiles, MAX_FILE_SIZE_BYTES } from '../utils/fileValidation';
 import { parseCsvFile } from '../utils/csvParser';
 import { isValidEmail } from '../utils/isValidEmail';
 import { applyToField, insertAtCursor, prefixLines, wrapSelection } from '../utils/textEditing';
-import { useToast } from '../components/ui/ToastProvider';
+import { useToast } from './useToast';
 
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 const MAX_ATTACHMENTS = 10;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, ChevronDown, RefreshCw, ScrollText, XCircle } from 'lucide-react';
 import { getWebhookLogs } from '../api/webhookApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
-import { useToast } from './ui/ToastProvider';
+import { useToast } from '../hooks/useToast';
 import Section from './ui/Section';
 import EmptyState from './ui/EmptyState';
 import Skeleton from './ui/Skeleton';
