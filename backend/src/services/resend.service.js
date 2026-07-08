@@ -56,9 +56,13 @@ async function verifyApiKey(apiKey) {
   try {
     await resendRequest('/domains', { apiKey });
   } catch (err) {
-    // 403 means the key is valid but scoped to send-only access, so domains
-    // are unreadable with this key - that's not a configuration error.
-    if (err.status === 403) return;
+    // A 403, or a 401 whose message says the key is scope-restricted, means
+    // the key itself is valid but can't read domains (e.g. a "sending
+    // access"-only key, which Resend rejects from /domains with 401 and a
+    // message like "This API key is restricted to only send emails") - not
+    // an actual authentication failure.
+    const isScopeRestricted = err.status === 403 || (err.status === 401 && /restricted/i.test(err.message));
+    if (isScopeRestricted) return;
     throw err;
   }
 }
