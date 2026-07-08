@@ -4,3 +4,4 @@ npm-debug.log*
 *.log
 .DS_Store
 backend/data/settings.json
+backend/data/webhookLogs.json

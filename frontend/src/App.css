@@ -1495,6 +1495,207 @@
   }
 }
 
+/* ---------- Webhook page ---------- */
+
+.code-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text-h);
+  overflow-x: auto;
+}
+
+.code-block code {
+  white-space: nowrap;
+}
+
+.payload-example {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-h);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.webhook-hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.webhook-hint strong {
+  color: var(--text-h);
+}
+
+.webhook-hint--warning {
+  color: var(--error);
+}
+
+.webhook-fields {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.webhook-fields th,
+.webhook-fields td {
+  text-align: left;
+  vertical-align: top;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.webhook-fields th {
+  color: var(--text-h);
+  font-weight: 600;
+  background: var(--surface-raised);
+}
+
+.webhook-fields tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.webhook-fields code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--accent-hover);
+}
+
+/* ---------- Webhook logs ---------- */
+
+.webhook-logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.webhook-log-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  background: var(--bg);
+}
+
+.webhook-log-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.webhook-log-card__timestamp {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.webhook-log-card__row {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.webhook-log-card__row strong {
+  flex-shrink: 0;
+  width: 90px;
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.webhook-log-card__row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.webhook-log-card__error {
+  color: var(--error);
+}
+
+.webhook-log-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.webhook-log-badge--success {
+  color: var(--success);
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+
+.webhook-log-badge--failed {
+  color: var(--error);
+  background: var(--error-bg);
+  border-color: var(--error-border);
+}
+
+.json-viewer {
+  margin-top: 10px;
+}
+
+.json-viewer summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-hover);
+}
+
+.json-viewer summary::-webkit-details-marker {
+  display: none;
+}
+
+.json-viewer summary svg {
+  transition: transform 0.15s ease;
+}
+
+.json-viewer[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.json-viewer pre {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-h);
+  overflow-x: auto;
+  white-space: pre;
+}
+
 @media (max-width: 480px) {
   .section {
     padding: 14px 18px;

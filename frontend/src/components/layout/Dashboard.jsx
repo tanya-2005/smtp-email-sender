@@ -34,7 +34,9 @@ function Dashboard() {
       />
       <main className="dashboard__compose">
         {view === 'settings' && <SettingsPage onSaved={composer.refreshSender} />}
-        {view === 'webhook' && <WebhookPage />}
+        {view === 'webhook' && (
+          <WebhookPage senderEmail={composer.senderEmail} senderStatus={composer.senderStatus} />
+        )}
         {view === 'webhookLogs' && <WebhookLogsPage />}
         {view === 'compose' && <EmailForm composer={composer} />}
       </main>
