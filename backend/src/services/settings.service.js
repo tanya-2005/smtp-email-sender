@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const SMTP_PROVIDERS = require('../config/smtpProviders');
+const {
+  SMTP_CONNECTION_TIMEOUT_MS,
+  SMTP_GREETING_TIMEOUT_MS,
+  SMTP_SOCKET_TIMEOUT_MS,
+} = require('../config/limits');
 
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
@@ -70,6 +75,9 @@ function resolveSmtpConfig(settings) {
     secure,
     auth: { user: resolveAuthUser(settings), pass: settings.password },
     from: settings.senderName ? `"${settings.senderName}" <${settings.senderEmail}>` : settings.senderEmail,
+    connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+    greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
+    socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
   };
 }
 

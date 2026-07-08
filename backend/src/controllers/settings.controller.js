@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const settingsService = require('../services/settings.service');
+const logSmtpError = require('../utils/logSmtpError');
 
 function getSettings(req, res) {
   const settings = settingsService.readSettings();
@@ -11,10 +12,24 @@ function resolvePassword(req) {
   return req.body.password && req.body.password.trim() ? req.body.password : current.password;
 }
 
+function formatConnectionError(err) {
+  return err.code ? `${err.message} (${err.code})` : err.message;
+}
+
 async function verifyCandidate(candidate) {
   const { from, ...transportOptions } = settingsService.resolveSmtpConfig(candidate);
+  const target = `${transportOptions.host}:${transportOptions.port}`;
+  console.log(`[SMTP] Verifying connection to ${target} (secure=${transportOptions.secure})`);
+
   const transporter = nodemailer.createTransport(transportOptions);
-  await transporter.verify();
+
+  try {
+    await transporter.verify();
+    console.log(`[SMTP] Verified connection to ${target}`);
+  } catch (err) {
+    logSmtpError(`verify ${target}`, err);
+    throw err;
+  }
 }
 
 async function saveSettings(req, res) {
@@ -30,7 +45,7 @@ async function saveSettings(req, res) {
   } catch (err) {
     res.status(200).json({
       ...settingsService.toPublicSettings(saved),
-      connection: { success: false, message: err.message },
+      connection: { success: false, message: formatConnectionError(err) },
     });
   }
 }
@@ -42,7 +57,7 @@ async function testConnection(req, res) {
     await verifyCandidate(candidate);
     res.status(200).json({ success: true, message: `Connected as ${settingsService.resolveAuthUser(candidate)}` });
   } catch (err) {
-    res.status(200).json({ success: false, message: err.message });
+    res.status(200).json({ success: false, message: formatConnectionError(err) });
   }
 }
 

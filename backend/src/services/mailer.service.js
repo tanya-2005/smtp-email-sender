@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const AppError = require('../utils/AppError');
 const isValidEmail = require('../utils/isValidEmail');
 const personalize = require('../utils/personalize');
+const logSmtpError = require('../utils/logSmtpError');
 const settingsService = require('./settings.service');
 
 function assertConfigured() {
@@ -22,7 +23,13 @@ function getTransporter() {
 
 async function verifyConnection() {
   const { transporter } = getTransporter();
-  await transporter.verify();
+
+  try {
+    await transporter.verify();
+  } catch (err) {
+    logSmtpError('startup verifyConnection', err);
+    throw err;
+  }
 }
 
 async function sendMail({ to, subject, text, html, attachments }) {
@@ -39,6 +46,7 @@ async function sendMail({ to, subject, text, html, attachments }) {
     });
     return info;
   } catch (err) {
+    logSmtpError(`sendMail to ${to}`, err);
     throw new AppError(`Failed to send email: ${err.message}`, 502);
   }
 }
