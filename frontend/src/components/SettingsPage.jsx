@@ -120,10 +120,10 @@ function SettingsPage({ onSaved }) {
       <form onSubmit={handleSave}>
         <Section icon={SettingsIcon} title="Sender Account">
           <p className="section__description">
-            This application sends all outgoing email through Resend (resend.com) - there is no SMTP or
-            other provider option. Paste your Resend API key below. Note: in Resend's sandbox mode (before
-            you verify a sending domain), you can only deliver to the email address on your own Resend
-            account.
+            This application uses Resend as its email delivery service. Configure your sender email address
+            and Resend API key below. During Resend's free sandbox mode (before verifying a sending
+            domain), emails can only be delivered to the email address associated with your own Resend
+            account. After verifying a sending domain in Resend, emails can be sent to any recipient.
           </p>
 
           <div className="settings-grid">

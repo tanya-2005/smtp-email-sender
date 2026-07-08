@@ -39,10 +39,10 @@ const FIELDS = [
 ];
 
 const STATUS_CODES = [
-  { code: '200', meaning: 'Email sent successfully. Response includes the SMTP messageId.' },
+  { code: '200', meaning: 'Email sent successfully. Response includes the Resend messageId.' },
   { code: '400', meaning: 'Payload failed validation (missing/invalid fields) or the JSON body could not be parsed. See the errors array.' },
   { code: '413', meaning: 'Request payload too large - reduce attachment size or count.' },
-  { code: '502', meaning: 'The SMTP server rejected the send (e.g. bad credentials, recipient refused).' },
+  { code: '502', meaning: 'Resend rejected the send (e.g. invalid API key, unverified sending domain, recipient refused).' },
   { code: '503', meaning: 'The Sender Account has not been configured yet.' },
 ];
 
@@ -82,7 +82,7 @@ function WebhookPage({ senderEmail, senderStatus }) {
       <Section icon={Webhook} title="Webhook">
         <p className="section__description">
           Send emails programmatically by posting JSON to this endpoint - the primary way to send email
-          through this service. The Manual Email composer remains available as a separate tool. SMTP
+          through this service. The Manual Email composer remains available as a separate tool. Resend API
           credentials are never accepted in the payload; every request sends through the currently
           configured Sender Account.
         </p>
@@ -91,7 +91,7 @@ function WebhookPage({ senderEmail, senderStatus }) {
 
         {senderStatus !== 'connected' && (
           <p className="webhook-hint webhook-hint--warning">
-            Set up your Sender Account before sending - the webhook uses those SMTP credentials.
+            Set up your Sender Account before sending - the webhook uses that Resend API key.
           </p>
         )}
         {senderStatus === 'connected' && senderEmail && (

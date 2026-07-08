@@ -249,14 +249,14 @@ export function useEmailComposer() {
 
   const hasContent = Boolean(form.subject.trim()) && Boolean(form.message.trim());
   const csvOverLimit = mode === 'csv' && csvRows.length > MAX_RECIPIENTS;
-  const smtpConfigured = senderStatus === 'connected';
+  const senderConfigured = senderStatus === 'connected';
 
   const filledBulkRecipients = recipients.map((email) => email.trim()).filter(Boolean);
   const bulkRecipientsValid =
     filledBulkRecipients.length > 0 && filledBulkRecipients.every(isValidEmail);
 
   const isFormValid =
-    smtpConfigured &&
+    senderConfigured &&
     hasContent &&
     !csvOverLimit &&
     (mode === 'single'
@@ -266,7 +266,7 @@ export function useEmailComposer() {
         : estimatedEmails > 0);
 
   function getValidationMessage() {
-    if (!smtpConfigured) return 'Set up your Sender Account before sending.';
+    if (!senderConfigured) return 'Set up your Sender Account before sending.';
     if (mode === 'single' && !isValidEmail(form.to.trim())) return 'Enter a valid recipient email.';
     if (mode === 'bulk' && !bulkRecipientsValid) return 'Add at least one valid recipient.';
     if (mode === 'csv' && csvRows.length === 0) return 'Upload a CSV file with recipients.';
@@ -305,7 +305,7 @@ export function useEmailComposer() {
     handleSubmit,
     senderEmail,
     senderStatus,
-    smtpConfigured,
+    senderConfigured,
     refreshSender,
     validationMessage,
     activeField,
