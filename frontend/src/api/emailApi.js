@@ -38,3 +38,13 @@ export async function sendPersonalizedEmail({ recipients, subject, message, atta
   const response = await apiClient.post('/emails/send-personalized', formData);
   return response.data;
 }
+
+export async function getCampaignStatus(campaignId) {
+  const response = await apiClient.get(`/emails/campaigns/${campaignId}`);
+  return response.data;
+}
+
+export async function cancelCampaign(campaignId) {
+  const response = await apiClient.post(`/emails/campaigns/${campaignId}/cancel`);
+  return response.data;
+}

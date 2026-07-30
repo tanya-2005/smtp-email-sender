@@ -1,5 +1,7 @@
 const mailerService = require('../services/mailer.service');
 const settingsService = require('../services/settings.service');
+const campaignService = require('../services/campaign.service');
+const AppError = require('../utils/AppError');
 
 function buildAttachments(files) {
   return (files || []).map((file) => ({
@@ -21,28 +23,46 @@ async function sendEmail(req, res, next) {
   }
 }
 
-async function sendBulkEmail(req, res, next) {
-  const { recipients, subject, text, html } = req.body;
-  const attachments = buildAttachments(req.files);
+// Bulk/personalized sends now create a drip campaign and return immediately instead of
+// blocking on the network calls - mailerService.assertConfigured() reproduces the same
+// upfront "Sender Account not configured" 503 the old synchronous path gave, so that failure
+// still surfaces instantly rather than only showing up once the scheduler tries to send.
+function sendCampaign(type) {
+  return async function (req, res, next) {
+    const { recipients, subject, text, html } = req.body;
+    const attachments = buildAttachments(req.files);
 
-  try {
-    const summary = await mailerService.sendBulkMail({ recipients, subject, text, html, attachments });
-    res.status(200).json(summary);
-  } catch (err) {
-    next(err);
-  }
+    try {
+      mailerService.assertConfigured();
+      const campaign = campaignService.createCampaign({ type, recipients, subject, text, html, attachments });
+      res.status(202).json(campaignService.getCampaignSummary(campaign));
+    } catch (err) {
+      next(err);
+    }
+  };
 }
 
-async function sendPersonalizedEmail(req, res, next) {
-  const { recipients, subject, text, html } = req.body;
-  const attachments = buildAttachments(req.files);
+const sendBulkEmail = sendCampaign('bulk');
+const sendPersonalizedEmail = sendCampaign('personalized');
 
-  try {
-    const summary = await mailerService.sendPersonalizedBulkMail({ recipients, subject, text, html, attachments });
-    res.status(200).json(summary);
-  } catch (err) {
-    next(err);
+// Polled by the frontend every 10-15s to track a drip campaign's progress.
+function getCampaignStatus(req, res, next) {
+  const campaign = campaignService.getCampaign(req.params.id);
+  if (!campaign) return next(new AppError('Campaign not found', 404));
+
+  res.status(200).json(campaignService.getCampaignSummary(campaign));
+}
+
+function cancelCampaign(req, res, next) {
+  const campaign = campaignService.getCampaign(req.params.id);
+  if (!campaign) return next(new AppError('Campaign not found', 404));
+
+  if (!campaignService.isCancellable(campaign)) {
+    return next(new AppError(`Campaign cannot be cancelled - it is already ${campaign.status}`, 409));
   }
+
+  const cancelled = campaignService.cancelCampaign(campaign);
+  res.status(200).json(campaignService.getCampaignSummary(cancelled));
 }
 
 function getSender(req, res) {
@@ -53,4 +73,4 @@ function getSender(req, res) {
   });
 }
 
-module.exports = { sendEmail, sendBulkEmail, sendPersonalizedEmail, getSender };
+module.exports = { sendEmail, sendBulkEmail, sendPersonalizedEmail, getSender, getCampaignStatus, cancelCampaign };

@@ -1038,59 +1038,105 @@
   background: var(--border);
 }
 
-/* ---------- Bulk / CSV summary ---------- */
+/* ---------- Campaign progress (drip sends) ---------- */
 
-.bulk-summary {
-  margin: 0 26px;
-  margin-top: 16px;
+.campaign-progress {
+  padding: 28px 26px;
+}
+
+.campaign-progress__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.campaign-progress__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.campaign-progress__header--done .campaign-progress__icon {
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+}
+
+.campaign-progress__header--cancelled .campaign-progress__icon {
+  color: var(--text-dim);
+  background: var(--border);
+}
+
+.campaign-progress__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.campaign-progress__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.campaign-progress__status {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.campaign-progress__close {
+  flex-shrink: 0;
+}
+
+.campaign-progress__stats {
+  display: flex;
+  gap: 12px;
+  text-align: center;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 16px;
   background: var(--bg);
+  margin-bottom: 16px;
 }
 
-.bulk-summary__stats {
-  display: flex;
-  gap: 12px;
-  text-align: center;
-}
-
-.bulk-summary__stat {
+.campaign-progress__stat {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.bulk-summary__stat strong {
-  font-size: 22px;
+.campaign-progress__stat strong {
+  font-size: 20px;
   color: var(--text-h);
 }
 
-.bulk-summary__stat span {
-  font-size: 12px;
+.campaign-progress__stat span {
+  font-size: 11px;
   color: var(--text-dim);
 }
 
-.bulk-summary__stat--success strong {
+.campaign-progress__stat--success strong {
   color: var(--success);
 }
 
-.bulk-summary__stat--failed strong {
+.campaign-progress__stat--failed strong {
   color: var(--error);
 }
 
-.bulk-summary__failed-list {
-  list-style: none;
-  margin: 14px 0 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--border);
+.campaign-progress__next {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--error);
-  text-align: left;
+  color: var(--text-dim);
+  margin-bottom: 20px;
 }
 
 /* ---------- Email preview (reused by right-panel LivePreview) ---------- */
@@ -1774,10 +1820,6 @@
 
   .panel__footer--split {
     flex-direction: column;
-  }
-
-  .bulk-summary {
-    margin: 14px 18px 0;
   }
 
   .toast-container {

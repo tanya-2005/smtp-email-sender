@@ -22,7 +22,11 @@ async function resendRequest(path, { method = 'GET', apiKey, body } = {}) {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
-    throw new Error(err.name === 'TimeoutError' ? 'Resend API request timed out' : err.message);
+    // Never got an HTTP response at all (timeout, DNS failure, connection reset, etc.) -
+    // tagged explicitly so callers can treat it as transient without guessing from the message.
+    const networkError = new Error(err.name === 'TimeoutError' ? 'Resend API request timed out' : err.message);
+    networkError.isNetworkError = true;
+    throw networkError;
   }
 
   const data = await response.json().catch(() => ({}));

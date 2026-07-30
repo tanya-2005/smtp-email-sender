@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { getSender, sendEmail, sendBulkEmail, sendPersonalizedEmail } from '../api/emailApi';
+import {
+  getSender,
+  sendEmail,
+  sendBulkEmail,
+  sendPersonalizedEmail,
+  getCampaignStatus,
+  cancelCampaign as cancelCampaignRequest,
+} from '../api/emailApi';
 import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { partitionFiles, MAX_FILE_SIZE_BYTES } from '../utils/fileValidation';
 import { parseCsvFile } from '../utils/csvParser';
@@ -10,6 +17,11 @@ import { useToast } from './useToast';
 const INITIAL_FORM = { to: '', subject: '', message: '' };
 const MAX_ATTACHMENTS = 10;
 const MAX_RECIPIENTS = 150;
+// Within the 10-15s range requested for polling a drip campaign's progress.
+const CAMPAIGN_POLL_INTERVAL_MS = 12000;
+// Only "completed" is ever produced by the backend today - "failed"/"cancelled" are included
+// so polling still stops correctly if those are added later.
+const TERMINAL_CAMPAIGN_STATUSES = ['completed', 'failed', 'cancelled'];
 
 export function useEmailComposer() {
   const showToast = useToast();
@@ -21,7 +33,8 @@ export function useEmailComposer() {
   const [isParsingCsv, setIsParsingCsv] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
-  const [summary, setSummary] = useState(null);
+  const [campaignProgress, setCampaignProgress] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [lastSuccess, setLastSuccess] = useState(null);
   const [activeField, setActiveField] = useState('message');
   const [senderEmail, setSenderEmail] = useState(null);
@@ -30,6 +43,35 @@ export function useEmailComposer() {
   const subjectRef = useRef(null);
   const messageRef = useRef(null);
   const fileInputRef = useRef(null);
+  const pollIntervalRef = useRef(null);
+
+  function stopCampaignPolling() {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }
+
+  // Runs independently of any single request - the campaign itself is driven by the
+  // background scheduler on the server, this just periodically checks in on it.
+  function startCampaignPolling(campaignId) {
+    stopCampaignPolling();
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const status = await getCampaignStatus(campaignId);
+        setCampaignProgress(status);
+        if (TERMINAL_CAMPAIGN_STATUSES.includes(status.status)) {
+          stopCampaignPolling();
+        }
+      } catch (error) {
+        // A transient network hiccup shouldn't stop polling - only give up once the
+        // campaign is confirmed gone (404).
+        if (error?.response?.status === 404) stopCampaignPolling();
+      }
+    }, CAMPAIGN_POLL_INTERVAL_MS);
+  }
+
+  useEffect(() => stopCampaignPolling, []);
 
   function refreshSender() {
     return getSender()
@@ -58,12 +100,40 @@ export function useEmailComposer() {
 
   function handleModeChange(nextMode) {
     setMode(nextMode);
-    setSummary(null);
+    stopCampaignPolling();
+    setCampaignProgress(null);
     setLastSuccess(null);
   }
 
   function dismissSuccess() {
     setLastSuccess(null);
+  }
+
+  // Stops watching a campaign from the UI - the backend scheduler keeps sending it
+  // regardless, this only affects whether this browser tab keeps polling it.
+  function dismissCampaign() {
+    stopCampaignPolling();
+    setCampaignProgress(null);
+  }
+
+  // The confirmation prompt lives in CampaignProgress (the UI concern); this only runs once
+  // the user has already confirmed. The backend response is already the final, terminal
+  // summary (status: 'cancelled' with final sent/failed/remaining counts), so polling can
+  // stop immediately without waiting for one more poll cycle to catch up.
+  async function handleCancelCampaign() {
+    if (!campaignProgress) return;
+
+    setIsCancelling(true);
+    try {
+      const cancelled = await cancelCampaignRequest(campaignProgress.id);
+      stopCampaignPolling();
+      setCampaignProgress(cancelled);
+      showToast({ type: 'success', message: 'Campaign cancelled.' });
+    } catch (error) {
+      showToast({ type: 'error', message: extractErrorMessage(error) });
+    } finally {
+      setIsCancelling(false);
+    }
   }
 
   function handleRecipientChange(index, value) {
@@ -170,52 +240,46 @@ export function useEmailComposer() {
   async function handleSubmit(event) {
     event.preventDefault();
     setIsSending(true);
-    setSummary(null);
+    setCampaignProgress(null);
     setLastSuccess(null);
-    const attachmentsCount = attachments.length;
 
     try {
       if (mode === 'bulk') {
         const cleanedRecipients = recipients.map((email) => email.trim()).filter(Boolean);
-        const result = await sendBulkEmail({
+        const campaign = await sendBulkEmail({
           recipients: cleanedRecipients,
           subject: form.subject,
           message: form.message,
           attachments,
         });
         showToast({
-          type: result.failed > 0 ? 'error' : 'success',
-          message: `Sent ${result.successful} of ${result.total} emails successfully.`,
+          type: 'success',
+          message: `Campaign created - sending ${campaign.totalRecipients} emails across ${campaign.totalBatches} batch${campaign.totalBatches === 1 ? '' : 'es'}.`,
         });
-        if (result.failed === 0) {
-          setLastSuccess({ mode, sentCount: result.successful, attachmentsCount, timestamp: new Date() });
-          setForm(INITIAL_FORM);
-          setRecipients(['']);
-          resetAttachments();
-        } else {
-          setSummary(result);
-        }
+        setCampaignProgress(campaign);
+        startCampaignPolling(campaign.id);
+        setForm(INITIAL_FORM);
+        setRecipients(['']);
+        resetAttachments();
       } else if (mode === 'csv') {
-        const result = await sendPersonalizedEmail({
+        const campaign = await sendPersonalizedEmail({
           recipients: csvRows,
           subject: form.subject,
           message: form.message,
           attachments,
         });
         showToast({
-          type: result.failed > 0 ? 'error' : 'success',
-          message: `Sent ${result.successful} of ${result.total} emails successfully.`,
+          type: 'success',
+          message: `Campaign created - sending ${campaign.totalRecipients} emails across ${campaign.totalBatches} batch${campaign.totalBatches === 1 ? '' : 'es'}.`,
         });
-        if (result.failed === 0) {
-          setLastSuccess({ mode, sentCount: result.successful, attachmentsCount, timestamp: new Date() });
-          setForm(INITIAL_FORM);
-          setCsvHeaders([]);
-          setCsvRows([]);
-          resetAttachments();
-        } else {
-          setSummary(result);
-        }
+        setCampaignProgress(campaign);
+        startCampaignPolling(campaign.id);
+        setForm(INITIAL_FORM);
+        setCsvHeaders([]);
+        setCsvRows([]);
+        resetAttachments();
       } else {
+        const attachmentsCount = attachments.length;
         await sendEmail({ ...form, attachments });
         showToast({ type: 'success', message: 'Email sent successfully!' });
         setLastSuccess({ mode, sentCount: 1, attachmentsCount, timestamp: new Date() });
@@ -299,7 +363,10 @@ export function useEmailComposer() {
     openAttachmentPicker,
     fileInputRef,
     isSending,
-    summary,
+    campaignProgress,
+    dismissCampaign,
+    cancelCampaign: handleCancelCampaign,
+    isCancelling,
     lastSuccess,
     dismissSuccess,
     handleSubmit,

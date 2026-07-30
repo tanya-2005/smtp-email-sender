@@ -1,6 +1,4 @@
 const AppError = require('../utils/AppError');
-const isValidEmail = require('../utils/isValidEmail');
-const personalize = require('../utils/personalize');
 const logMailError = require('../utils/logMailError');
 const resendService = require('./resend.service');
 const settingsService = require('./settings.service');
@@ -44,71 +42,13 @@ async function sendMail({ to, subject, text, html, attachments }) {
     return info;
   } catch (err) {
     logMailError(`sendMail to ${to}`, err);
-    throw new AppError(`Failed to send email: ${err.message}`, 502);
+    const wrapped = new AppError(`Failed to send email: ${err.message}`, 502);
+    // Preserved for the campaign scheduler's retry classifier - not read by any other
+    // caller, so this doesn't change behavior for the existing single/bulk send paths.
+    wrapped.providerStatus = err.status;
+    wrapped.isNetworkError = err.isNetworkError === true;
+    throw wrapped;
   }
 }
 
-async function sendBulkMail({ recipients, subject, text, html, attachments }) {
-  assertConfigured();
-  const results = [];
-
-  for (const recipient of recipients) {
-    try {
-      const info = await sendMail({ to: recipient, subject, text, html, attachments });
-      results.push({ email: recipient, status: 'success', messageId: info.messageId });
-    } catch (err) {
-      results.push({ email: recipient, status: 'failed', error: err.message });
-    }
-  }
-
-  const successful = results.filter((r) => r.status === 'success').length;
-
-  return {
-    total: results.length,
-    successful,
-    failed: results.length - successful,
-    results,
-  };
-}
-
-async function sendPersonalizedBulkMail({ recipients, subject, text, html, attachments }) {
-  assertConfigured();
-  const results = [];
-
-  for (const recipient of recipients) {
-    const email = recipient?.email;
-
-    if (!isValidEmail(email)) {
-      results.push({
-        email: email || '(missing email)',
-        status: 'failed',
-        error: 'Invalid or missing email address - skipped',
-      });
-      continue;
-    }
-
-    try {
-      const info = await sendMail({
-        to: email,
-        subject: personalize(subject, recipient),
-        text: personalize(text, recipient),
-        html: personalize(html, recipient),
-        attachments,
-      });
-      results.push({ email, status: 'success', messageId: info.messageId });
-    } catch (err) {
-      results.push({ email, status: 'failed', error: err.message });
-    }
-  }
-
-  const successful = results.filter((r) => r.status === 'success').length;
-
-  return {
-    total: results.length,
-    successful,
-    failed: results.length - successful,
-    results,
-  };
-}
-
-module.exports = { sendMail, sendBulkMail, sendPersonalizedBulkMail, verifyConnection };
+module.exports = { sendMail, verifyConnection, assertConfigured };
