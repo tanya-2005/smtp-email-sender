@@ -21,14 +21,29 @@ function ensureDataDir() {
 
 function readSettings() {
   ensureDataDir();
-  if (!fs.existsSync(SETTINGS_FILE)) return { ...DEFAULT_SETTINGS };
 
-  try {
-    const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch {
-    return { ...DEFAULT_SETTINGS };
+  let settings = { ...DEFAULT_SETTINGS };
+
+  if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+      const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    } catch {
+      settings = { ...DEFAULT_SETTINGS };
+    }
   }
+
+  // Use Railway environment variables when settings.json
+  // is not available in the deployed environment.
+  if (!settings.password && process.env.RESEND_API_KEY) {
+    settings.password = process.env.RESEND_API_KEY;
+  }
+
+  if (!settings.senderEmail && process.env.SMTP_FROM) {
+    settings.senderEmail = process.env.SMTP_FROM;
+  }
+
+  return settings;
 }
 
 function writeSettings(settings) {
